@@ -44,7 +44,28 @@ def bold(text: str) -> str:
     return f"<b>{text}</b>"
 
 
-def quote_block(lines: Iterable[str]) -> str:
-    """Wrap pre-rendered (already escaped) lines in a single blockquote card."""
+def italic(text: str) -> str:
+    """Italicize an already-escaped fragment."""
 
-    return "<blockquote>" + "\n".join(lines) + "</blockquote>"
+    return f"<i>{text}</i>"
+
+
+# A thin rule used to separate a card's header from its body.
+DIVIDER = "➖➖➖➖➖➖➖➖➖"
+
+
+def label(name: str, value: str) -> str:
+    """A ``<b>Name:</b> value`` body line (``name`` is escaped, ``value`` raw)."""
+
+    return f"{bold(escape(name) + ':')} {value}"
+
+
+def quote_block(lines: Iterable[str], *, expandable: bool = False) -> str:
+    """Wrap pre-rendered (already escaped) lines in a single blockquote card.
+
+    When ``expandable`` is set, Telegram renders a collapsible blockquote so
+    long bodies (e.g. error traces) don't flood the chat.
+    """
+
+    tag = "<blockquote expandable>" if expandable else "<blockquote>"
+    return tag + "\n".join(lines) + "</blockquote>"

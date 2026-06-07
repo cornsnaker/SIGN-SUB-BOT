@@ -100,14 +100,15 @@ def render_progress(
     pct = percent_of(done, total) if total else 0.0
     lines = [
         md.bold(f"🔄 {md.escape(stage)}"),
-        f"⚡ Speed: {md.code(human_speed(speed))}",
-        f"⏳ ETA: {md.code(human_eta(eta))}",
-        f"📦 {_transfer_noun(stage)}: {md.code(f'{human_size(done)} / {human_size(total)}')}",
-        f"📊 Progress: {md.code(f'{pct:.1f}%')}",
-        f"[{bar(pct)}]",
+        md.DIVIDER,
+        f"⚡ {md.label('Speed', md.code(human_speed(speed)))}",
+        f"⏳ {md.label('ETA', md.code(human_eta(eta)))}",
+        f"📦 {md.label(_transfer_noun(stage), md.code(f'{human_size(done)} / {human_size(total)}'))}",
+        f"📊 {md.label('Progress', md.code(f'{pct:.1f}%'))}",
+        f"<code>[{bar(pct)}]</code>",
     ]
     if extra:
-        lines.append(f"📝 {md.escape(extra)}")
+        lines.append(f"📝 {md.italic(md.escape(extra))}")
     return md.quote_block(lines)
 
 
@@ -115,16 +116,22 @@ def render_status(title: str, lines: Optional[list[str]] = None, *, emoji: str =
     """Render a generic status card (no progress bar) as a blockquote."""
 
     body = [md.bold(f"{emoji} {md.escape(title)}")]
-    for line in lines or []:
-        body.append(md.escape(line))
+    rest = list(lines or [])
+    if rest:
+        body.append(md.DIVIDER)
+        body.extend(md.escape(line) for line in rest)
     return md.quote_block(body)
 
 
 def render_error(message: str, detail: Optional[str] = None) -> str:
-    """Render an error card."""
+    """Render an error card.
 
-    lines = [md.bold(f"❌ {md.escape('Error')}"), md.escape(message)]
+    The detail is shown in full inside an expandable blockquote (monospace) so
+    multi-line ffmpeg/aria2 diagnostics stay readable without flooding chat.
+    """
+
+    lines = [md.bold(f"❌ {md.escape('Error')}"), md.DIVIDER, md.escape(message)]
+    detail = (detail or "").strip()
     if detail:
-        snippet = detail.strip().splitlines()[-1] if detail.strip() else detail
-        lines.append(md.code(snippet[:200]))
-    return md.quote_block(lines)
+        lines.append(md.code(detail[:1500]))
+    return md.quote_block(lines, expandable=bool(detail))
