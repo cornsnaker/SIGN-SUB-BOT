@@ -78,6 +78,25 @@ Then DM the bot:
 
 Use the inline buttons to start, inspect the filter policy, or cancel.
 
+## Docker
+
+The image bundles `ffmpeg`/`ffprobe` and `aria2c`, so it is fully self-contained.
+
+```bash
+# Build
+docker build -t signsub-bot .
+
+# Run (config via --env-file; /data persists downloads + the session file)
+docker run --rm -it \
+  --env-file .env \
+  -v "$(pwd)/data:/data" \
+  signsub-bot
+```
+
+The container reads the same environment variables as `.env.example`. `WORK_DIR`
+defaults to `/data` inside the image; mount a volume there to persist the
+Pyrogram session and avoid re-downloading on restart.
+
 ## Standalone CLI
 
 `SIGNSUB.py` remains available as a synchronous, offline CLI for processing a
