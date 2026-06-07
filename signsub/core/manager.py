@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import shutil
+import time
 from pathlib import Path
 from typing import Optional
 
@@ -24,11 +25,15 @@ from ..processing.pipeline import PipelineError, SubtitlePipeline
 from ..ui import keyboards as kb
 from ..ui import progress as pg
 from ..upload.uploader import Uploader
-from .sources import SourceSpec
+from .sources import SourceKind, SourceSpec
 from .status import StatusReporter
 from .task import Task, TaskState, new_token
 
 _VIDEO_EXTS = {".mkv", ".mp4", ".m4v", ".mov", ".webm", ".ts"}
+# Evict tasks the user created but never started after this long, and never
+# keep more than this many un-started tasks in the registry.
+_PENDING_TTL_SECONDS = 3600.0
+_MAX_PENDING_TASKS = 200
 
 
 class TaskManager:
@@ -61,6 +66,7 @@ class TaskManager:
     # -- registry -----------------------------------------------------------
 
     def create_task(self, *, chat_id: int, user_id: int, trigger_message_id: int, spec: SourceSpec) -> Task:
+        self._prune_stale()
         token = new_token()
         task = Task(
             token=token,
@@ -71,6 +77,44 @@ class TaskManager:
         )
         self._tasks[token] = task
         return task
+
+    def _prune_stale(self) -> None:
+        """Drop tasks that were created but never started (avoids leaks).
+
+        A task only leaves ``_tasks`` via ``_execute``'s ``finally`` block, so a
+        user who requests a source and never taps *Start* would otherwise leak a
+        :class:`Task` (and any downloaded ``.torrent`` file) forever.
+        """
+
+        now = time.monotonic()
+        pending = [
+            (t.created_at, tok)
+            for tok, t in self._tasks.items()
+            if tok not in self._runners and t.state == TaskState.PENDING
+        ]
+        expired = {tok for created, tok in pending if (now - created) > _PENDING_TTL_SECONDS}
+        if len(pending) - len(expired) > _MAX_PENDING_TASKS:
+            pending.sort()  # oldest first
+            overflow = len(pending) - len(expired) - _MAX_PENDING_TASKS
+            for _created, tok in pending:
+                if overflow <= 0:
+                    break
+                if tok not in expired:
+                    expired.add(tok)
+                    overflow -= 1
+        for tok in expired:
+            self._discard_pending(tok)
+
+    def _discard_pending(self, token: str) -> None:
+        task = self._tasks.pop(token, None)
+        if task is None:
+            return
+        # Remove a not-yet-started local .torrent file, if one was saved.
+        if task.spec.kind == SourceKind.TORRENT_FILE:
+            try:
+                Path(task.spec.value).unlink(missing_ok=True)
+            except OSError:
+                pass
 
     def get(self, token: str) -> Optional[Task]:
         return self._tasks.get(token)
@@ -92,12 +136,23 @@ class TaskManager:
             runner.cancel()
         return True
 
-    def launch(self, task: Task) -> None:
-        """Schedule ``task`` to run on the event loop."""
+    def launch(self, task: Task) -> bool:
+        """Schedule ``task`` to run on the event loop.
 
+        Returns ``False`` (and does nothing) if the task has already been
+        launched -- this guards against a user double-tapping *Start Download*
+        before the keyboard is removed, which would otherwise spawn a second
+        runner racing on the same work directory. Safe because this method is
+        synchronous: the state flip happens with no intervening ``await``.
+        """
+
+        if task.token in self._runners or task.state != TaskState.PENDING:
+            return False
+        task.state = TaskState.QUEUED
         runner = asyncio.create_task(self._execute(task), name=f"task-{task.token}")
         self._runners[task.token] = runner
         runner.add_done_callback(lambda _t, tok=task.token: self._runners.pop(tok, None))
+        return True
 
     # -- execution ----------------------------------------------------------
 

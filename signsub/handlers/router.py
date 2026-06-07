@@ -102,7 +102,7 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
 
     async def _handle_search(message: Message, query: str) -> None:
         status = await message.reply_text(
-            pg.render_status("Searching Nyaa.si", [md_safe(query)], emoji="🔎"),
+            pg.render_status("Searching Nyaa.si", [query], emoji="🔎"),
             parse_mode=ParseMode.HTML,
         )
         try:
@@ -181,11 +181,13 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             return
 
         if action == kb.ACT_START:
-            await query.answer("Starting...")
             reporter = StatusReporter(client, query.message,
                                       min_interval=config.progress_update_interval)
             manager.attach_reporter(task, reporter)
-            manager.launch(task)
+            if manager.launch(task):
+                await query.answer("Starting...")
+            else:
+                await query.answer("Task already started.", show_alert=True)
             return
 
         await query.answer()
@@ -214,7 +216,3 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             parse_mode=ParseMode.HTML,
             reply_markup=kb.source_menu(task.token),
         )
-
-
-def md_safe(text: str) -> str:
-    return md.escape(text)

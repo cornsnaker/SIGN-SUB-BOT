@@ -1,8 +1,8 @@
 """A throttled, edit-in-place status message backed by a Telegram message.
 
-The reporter keeps a single message updated with MarkdownV2 cards. Edits are
-throttled and de-duplicated (Telegram rejects identical edits) to stay within
-rate limits.
+The reporter keeps a single message updated with HTML blockquote cards. Edits
+are throttled and de-duplicated (Telegram rejects identical edits) to stay
+within rate limits.
 """
 
 from __future__ import annotations
@@ -58,6 +58,9 @@ class StatusReporter:
                 self._last_edit = now
             except FloodWait as exc:
                 await asyncio.sleep(int(getattr(exc, "value", 3)) + 1)
+                # Reset the throttle window so the next call does not retry
+                # immediately and trigger another FloodWait.
+                self._last_edit = time.monotonic()
             except Exception:
                 # A failed status edit must never abort the underlying task.
                 pass
