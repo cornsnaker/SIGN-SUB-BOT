@@ -4,8 +4,10 @@ Pipeline stages:
 
 1. ``ffprobe`` the input to map streams dynamically.
 2. Extract the primary English ASS subtitle layer to a temporary ``.ass``.
-3. Filter the ``[Events]`` section line-by-line, dropping any ``Dialogue`` whose
-   style is named ``default`` or ``song`` -- leaving only signs/typesetting/SFX.
+3. Filter the ``[Events]`` section line-by-line, keeping only ``Dialogue`` lines
+   whose text carries both an ``\\an7`` alignment and a ``\\pos(...)`` override
+   (i.e. positioned signs/typesetting/SFX), dropping plain dialogue. The
+   ``[Script Info]`` and ``[V4+ Styles]`` sections are preserved verbatim.
 4. Remux video + audio + legacy English subtitles + the new signs track +
    attachments/fonts into ``{name}_clean_english.mkv``; non-English subtitle
    tracks are dropped. The new track is tagged ``language=eng`` /
@@ -29,8 +31,18 @@ if TYPE_CHECKING:
 
 ProgressCb = Callable[[str, float, float], Awaitable[None]]
 
-BANNED_STYLES = {"default", "song"}
+# A subtitle event is treated as a "sign/song" (kept) when its text contains
+# both an \an7 alignment tag and a \pos(...) override; plain dialogue has
+# neither. Small spacing variations are tolerated.
+_AN7_RE = re.compile(r"\\an\s*7")
+_POS_RE = re.compile(r"\\pos\s*\(")
 _TIME_RE = re.compile(r"time=(\d+):(\d+):(\d+\.?\d*)")
+
+
+def _is_sign_event(text: str) -> bool:
+    """True if an event's text is a positioned sign/song (\\an7 + \\pos)."""
+
+    return bool(_AN7_RE.search(text) and _POS_RE.search(text))
 
 
 @dataclass(slots=True)
@@ -275,7 +287,12 @@ def _ffmpeg_error_summary(recent: "deque[str]") -> str:
 
 
 def _filter_ass(temp_ass: Path, output_ass: Path) -> tuple[int, int]:
-    """Strip dialogue styles from ``temp_ass`` -> ``output_ass``.
+    """Keep only positioned sign/song events from ``temp_ass`` -> ``output_ass``.
+
+    A ``Dialogue`` line is kept only when its text contains both ``\\an7`` and
+    ``\\pos(...)`` (positioned typesetting/signs/songs); plain dialogue is
+    dropped. The ``[Script Info]`` and ``[V4+ Styles]`` sections (and any other
+    non-event lines) are copied through unchanged.
 
     Returns ``(events_kept, events_dropped)`` for the ``Dialogue`` lines.
     """
@@ -296,16 +313,16 @@ def _filter_ass(temp_ass: Path, output_ass: Path) -> tuple[int, int]:
             out.append(line)
             continue
         if in_events and stripped.startswith("Dialogue:"):
+            # Text is the 10th field; everything after the 9th comma.
             parts = line.split(",", 9)
-            if len(parts) > 3:
-                style = parts[3].strip().lower()
-                if style in BANNED_STYLES:
-                    dropped += 1
-                    continue
+            text = parts[9] if len(parts) > 9 else ""
+            if _is_sign_event(text):
                 kept += 1
-            out.append(line)
-        else:
-            out.append(line)
+                out.append(line)
+            else:
+                dropped += 1
+            continue
+        out.append(line)
 
     output_ass.write_text("".join(out), encoding="utf-8")
     return kept, dropped
