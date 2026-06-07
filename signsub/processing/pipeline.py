@@ -140,13 +140,17 @@ class SubtitlePipeline:
         for audio in valid_audios:
             remux_cmd += ["-i", str(audio.path)]
 
-        remux_cmd += [
-            "-map", "0:v?",
-            "-map", "0:a?",
-        ]
-        # Map each external audio's first audio stream, in order.
+        remux_cmd += ["-map", "0:v?"]
+        # Map each external audio FIRST (input indices 2, 3, ...), then the
+        # original audio. Ordering the added track ahead of the originals is the
+        # key fix for the "added audio is muted" reports: many players (incl.
+        # Telegram's in-app player and most mobile/hardware players) auto-play
+        # the *first* audio stream by index and ignore the ``default``
+        # disposition flag, so a track placed after the originals never gets
+        # heard. Putting it first makes it play everywhere.
         for offset in range(len(valid_audios)):
             remux_cmd += ["-map", f"{2 + offset}:a:0"]
+        remux_cmd += ["-map", "0:a?"]
         # Map English-tagged subtitles by their absolute stream index. We avoid
         # the combined ``0:s:m:language:eng`` specifier because some ffmpeg
         # builds reject it ("Failed to set value ... for option 'map'");
@@ -156,41 +160,28 @@ class SubtitlePipeline:
         remux_cmd += [
             "-map", "1:s:0",                 # the new signs-only track
             "-map", "0:t?",                  # attachments / fonts (optional)
-            "-c", "copy",
+            "-c", "copy",                    # stream-copy everything (no re-encode)
         ]
-        # Re-encode each appended external audio to AAC. Stream-copying an
-        # arbitrary uploaded audio (FLAC/Opus/AC3/DTS/…) into MKV often plays
-        # silently in players with limited codec support (incl. Telegram's
-        # in-app player); AAC stereo is universally decodable.
-        for j in range(len(valid_audios)):
-            out_audio_index = original_audio_count + j
-            remux_cmd += [
-                f"-c:a:{out_audio_index}", "aac",
-                f"-b:a:{out_audio_index}", "192k",
-                f"-ac:a:{out_audio_index}", "2",
-            ]
         # Tag the new signs subtitle track.
         remux_cmd += [
             f"-metadata:s:s:{new_track_sub_index}", "language=eng",
             f"-metadata:s:s:{new_track_sub_index}", "title=Signs & Songs",
             f"-disposition:s:{new_track_sub_index}", "default",
         ]
-        # Tag each appended audio track (output audio index = originals + j).
+        # Added audios are now output streams a:0 .. a:(k-1); originals follow.
         for j, audio in enumerate(valid_audios):
-            out_audio_index = original_audio_count + j
             remux_cmd += [
-                f"-metadata:s:a:{out_audio_index}", f"language={audio.language or 'und'}",
+                f"-metadata:s:a:{j}", f"language={audio.language or 'und'}",
             ]
             if audio.title:
-                remux_cmd += [f"-metadata:s:a:{out_audio_index}", f"title={audio.title}"]
-        # When the user explicitly adds audio, make the first added track the
-        # default one so it actually plays (otherwise the player keeps the
-        # original track and the new audio seems "muted"). Clear default off the
-        # original audio streams so exactly one default remains.
+                remux_cmd += [f"-metadata:s:a:{j}", f"title={audio.title}"]
+        # Make the first added track the sole default and clear default off the
+        # originals (which now sit at a:k ..), so disposition-aware players also
+        # select the added audio.
         if valid_audios:
-            for i in range(original_audio_count):
+            remux_cmd += ["-disposition:a:0", "default"]
+            for i in range(len(valid_audios), len(valid_audios) + original_audio_count):
                 remux_cmd += [f"-disposition:a:{i}", "0"]
-            remux_cmd += [f"-disposition:a:{original_audio_count}", "default"]
         remux_cmd.append(str(output))
 
         await self._run_with_progress(remux_cmd, duration, progress_cb, "Remuxing")
