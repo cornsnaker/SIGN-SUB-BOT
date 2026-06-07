@@ -129,14 +129,19 @@ class SubtitlePipeline:
             remux_cmd += ["-i", str(audio.path)]
 
         remux_cmd += [
-            "-map", "0:v",
-            "-map", "0:a",
+            "-map", "0:v?",
+            "-map", "0:a?",
         ]
         # Map each external audio's first audio stream, in order.
         for offset in range(len(valid_audios)):
             remux_cmd += ["-map", f"{2 + offset}:a:0"]
+        # Map English-tagged subtitles by their absolute stream index. We avoid
+        # the combined ``0:s:m:language:eng`` specifier because some ffmpeg
+        # builds reject it ("Failed to set value ... for option 'map'");
+        # explicit ``0:<index>`` maps are portable across versions.
+        for sub in english_subs:
+            remux_cmd += ["-map", f"0:{sub.index}"]
         remux_cmd += [
-            "-map", "0:s:m:language:eng?",  # only English-tagged subtitles
             "-map", "1:s:0",                 # the new signs-only track
             "-map", "0:t?",                  # attachments / fonts (optional)
             "-c", "copy",
