@@ -15,6 +15,7 @@ class SourceKind(str, Enum):
     NYAA_VIEW = "nyaa_view"
     NYAA_SEARCH = "nyaa_search"
     TORRENT_FILE = "torrent_file"  # an uploaded .torrent document
+    LOCAL_FILE = "local_file"  # an uploaded video file already on disk
 
 
 @dataclass(slots=True)
@@ -79,6 +80,22 @@ def classify(text: str) -> Optional[SourceSpec]:
 
 def torrent_file_spec(path: str, label: str) -> SourceSpec:
     return SourceSpec(SourceKind.TORRENT_FILE, path, label)
+
+
+# Video container extensions accepted as a direct upload to run the pipeline on.
+VIDEO_EXTS = {".mkv", ".mp4", ".m4v", ".mov", ".webm", ".ts"}
+
+
+def is_video_filename(name: str) -> bool:
+    """True if ``name`` ends with a known video container extension."""
+
+    from pathlib import PurePosixPath
+
+    return PurePosixPath(name.lower()).suffix in VIDEO_EXTS
+
+
+def local_file_spec(path: str, label: str) -> SourceSpec:
+    return SourceSpec(SourceKind.LOCAL_FILE, path, label)
 
 
 def _magnet_label(magnet: str) -> str:

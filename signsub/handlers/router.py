@@ -19,7 +19,7 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import CallbackQuery, Message
 
 from ..config import Config
-from ..core import sources
+from ..core import logbuffer, sources
 from ..core.manager import TaskManager
 from ..core.status import StatusReporter
 from ..core.task import (
@@ -103,11 +103,12 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
         role = _role(user_id)
         lines = [
             "Send a direct link, magnet, .torrent file or a Nyaa.si link.",
-            "Or type any text to search Nyaa.si.",
-            "I leech it, build a clean Signs & Songs track and send it back.",
+            "Or upload a .mp4/.mkv video, or type any text to search Nyaa.si.",
+            "I build a clean Signs & Songs track and send it back.",
             "",
             "👤 Commands",
             "• /start, /help — this message",
+            "• /leech (/l) <link|magnet> — start a task from a link",
             "• /addaudio — add an external audio track to the pending file",
         ]
         if role in ("admin", "owner"):
@@ -116,12 +117,50 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
                 "🛡️ Admin",
                 "• /stats — bot uptime and task counters",
                 "• /tasks — live list of active tasks",
+                "• /logs [n] — tail the last n log lines",
                 "• /users — list known users" + (" (add/remove)" if role == "owner" else ""),
             ]
         if role == "owner":
             lines += ["• /users add <id> | /users remove <id> — manage access"]
         lines += ["", f"Your role: {role}."]
         return pg.render_status("Sign & Songs Leech Bot", lines, emoji="🎬")
+
+    async def _send_source_menu(message: Message, task: Task, label: str, icon: str) -> None:
+        await message.reply_text(
+            pg.render_status("Source Received", [f"{icon} {label}", "Choose an action:"],
+                             emoji="🧲"),
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb.source_menu(task.token),
+        )
+
+    async def _capture_local_video(message: Message, file_name: str) -> None:
+        """Stage a directly-uploaded video file and present the source menu."""
+
+        task = manager.create_task(
+            chat_id=message.chat.id,
+            user_id=message.from_user.id if message.from_user else 0,
+            trigger_message_id=message.id,
+            spec=sources.local_file_spec("", file_name),
+        )
+        dest = manager.local_video_dest(task, file_name)
+        status = await message.reply_text(
+            pg.render_status("Receiving file", [file_name], emoji="⬇️"),
+            parse_mode=ParseMode.HTML,
+        )
+        try:
+            local = await message.download(file_name=str(dest))
+        except Exception as exc:  # noqa: BLE001
+            manager.cancel(task.token)
+            await status.edit_text(pg.render_error("Could not save that file", repr(exc)),
+                                   parse_mode=ParseMode.HTML)
+            return
+        task.spec = sources.local_file_spec(str(local), Path(local).name)
+        await status.edit_text(
+            pg.render_status("Source Received", [f"📂 {Path(local).name}", "Choose an action:"],
+                             emoji="🧲"),
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb.source_menu(task.token),
+        )
 
     @client.on_message(filters.command(["start", "help"]) & filters.private)
     async def _on_start(_: Client, message: Message) -> None:
@@ -231,6 +270,70 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             parse_mode=ParseMode.HTML,
         )
 
+    @client.on_message(filters.command(["leech", "l"]) & filters.private)
+    async def _on_leech(_: Client, message: Message) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not _authorized(uid):
+            await _deny(message)
+            return
+        parts = (message.text or "").split(maxsplit=1)
+        arg = parts[1].strip() if len(parts) > 1 else ""
+        if not arg:
+            await message.reply_text(
+                pg.render_status(
+                    "Leech",
+                    ["Usage: /leech <link | magnet>", "e.g. /l https://… or /l magnet:?…",
+                     "You can also just paste the link, or send a .mp4/.mkv file."],
+                    emoji="📥",
+                ),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        spec = sources.classify(arg)
+        if spec is None or spec.kind == sources.SourceKind.NYAA_SEARCH:
+            await message.reply_text(
+                pg.render_error(
+                    "Not a valid source",
+                    "Give a direct link, magnet, .torrent URL or Nyaa link.",
+                ),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        task = manager.create_task(
+            chat_id=message.chat.id,
+            user_id=message.from_user.id if message.from_user else 0,
+            trigger_message_id=message.id,
+            spec=spec,
+        )
+        await _send_source_menu(message, task, spec.label, "🔗")
+
+    @client.on_message(filters.command("logs") & filters.private)
+    async def _on_logs(_: Client, message: Message) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not config.is_admin(uid):
+            await _deny(message, admin=True)
+            return
+        parts = (message.text or "").split()
+        count = 30
+        if len(parts) >= 2 and parts[1].lstrip("-").isdigit():
+            count = max(1, min(100, int(parts[1])))
+        buffer = logbuffer.get_buffer()
+        lines = buffer.tail(count) if buffer else []
+        if not lines:
+            await message.reply_text(
+                pg.render_status("Logs", ["No log lines captured yet."], emoji="📜"),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        body = "\n".join(lines)
+        # Telegram hard-limits a message to 4096 chars; keep room for markup.
+        if len(body) > 3500:
+            body = body[-3500:]
+        await message.reply_text(
+            pg.render_log_card(f"Last {len(lines)} log lines", body),
+            parse_mode=ParseMode.HTML,
+        )
+
     @client.on_message(filters.command(["addaudio", "muxaudio"]) & filters.private)
     async def _on_addaudio(_: Client, message: Message) -> None:
         uid = message.from_user.id if message.from_user else None
@@ -294,10 +397,18 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
                 )
             return
 
+        # A directly-uploaded video document -> run the pipeline on it.
+        if doc and sources.is_video_filename(fname):
+            await _capture_local_video(message, fname or f"upload_{message.id}.mkv")
+            return
+
         if not doc or not fname.lower().endswith(".torrent"):
             await message.reply_text(
-                pg.render_status("Unsupported file", ["Please send a .torrent file or a link."],
-                                 emoji="⚠️"),
+                pg.render_status(
+                    "Unsupported file",
+                    ["Send a .torrent file, a .mp4/.mkv video, or a link."],
+                    emoji="⚠️",
+                ),
                 parse_mode=ParseMode.HTML,
             )
             return
@@ -321,10 +432,26 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             reply_markup=kb.source_menu(task.token),
         )
 
+    @client.on_message(filters.video & filters.private)
+    async def _on_video(_: Client, message: Message) -> None:
+        if not _authorized(message.from_user.id if message.from_user else None):
+            return
+        # Ignore while collecting audio; the audio handlers own that flow.
+        if manager.awaiting_audio_task(message.chat.id) is not None:
+            return
+        vid = message.video
+        fname = (getattr(vid, "file_name", None) or f"upload_{message.id}.mp4")
+        if not sources.is_video_filename(fname):
+            fname += ".mp4"
+        await _capture_local_video(message, fname)
+
     @client.on_message(
         filters.text
         & filters.private
-        & ~filters.command(["start", "help", "stats", "tasks", "users", "addaudio", "muxaudio"])
+        & ~filters.command(
+            ["start", "help", "stats", "tasks", "users", "logs",
+             "addaudio", "muxaudio", "leech", "l"]
+        )
     )
     async def _on_text(_: Client, message: Message) -> None:
         if not _authorized(message.from_user.id if message.from_user else None):

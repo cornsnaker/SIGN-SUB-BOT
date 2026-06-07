@@ -134,10 +134,12 @@ python -m signsub
 
 Then DM the bot:
 
-- a **direct link**, **magnet**, **Nyaa.si link**, or upload a **`.torrent`** file, **or**
+- a **direct link**, **magnet**, **Nyaa.si link**, or upload a **`.torrent`** file,
+- upload a **`.mp4`/`.mkv`** video directly to run the pipeline on it (no download), **or**
 - any **text** to search Nyaa.si and pick a result,
 
 and use the inline buttons to start, add audio, inspect the filter policy, or cancel.
+You can also start from a command: `/leech <link|magnet>` (alias `/l`).
 
 ## 🤖 Commands & roles
 
@@ -148,9 +150,11 @@ always allowed regardless of the allow-list.
 | Command | Who | What |
 |---|---|---|
 | `/start`, `/help` | everyone | Role-aware help card |
+| `/leech <link\|magnet>` (`/l`) | users | Start a task straight from a link/magnet |
 | `/addaudio` (`/muxaudio`) | users | Add an external audio track to the pending file before starting (same as the 🎵 button) |
 | `/stats` | admin/owner | Uptime, tasks created, completed/failed/cancelled, active vs. slots, unique users |
 | `/tasks` | admin/owner | Live list of tracked tasks with state, label, owner and age |
+| `/logs [n]` | admin/owner | Tail the last `n` (default 30, max 100) in-memory log lines |
 | `/users` | admin/owner | List owner/admins/allow-list and seen users |
 | `/users add <id>` · `/users remove <id>` | owner | Authorize / revoke a user at runtime (not persisted across restarts) |
 

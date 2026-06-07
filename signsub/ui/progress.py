@@ -123,6 +123,13 @@ def render_status(title: str, lines: Optional[list[str]] = None, *, emoji: str =
     return md.quote_block(body)
 
 
+def render_log_card(title: str, body: str) -> str:
+    """Render recent log lines inside an expandable monospace blockquote."""
+
+    lines = [md.bold(f"📜 {md.escape(title)}"), md.DIVIDER, md.code(body or "(empty)")]
+    return md.quote_block(lines, expandable=True)
+
+
 def render_error(message: str, detail: Optional[str] = None) -> str:
     """Render an error card.
 

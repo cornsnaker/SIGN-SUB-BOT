@@ -130,6 +130,9 @@ class TaskManager:
                 Path(task.spec.value).unlink(missing_ok=True)
             except OSError:
                 pass
+        # Remove the staging dir holding a not-yet-started uploaded video.
+        if task.spec.kind == SourceKind.LOCAL_FILE and task.work_subdir:
+            shutil.rmtree(task.work_subdir, ignore_errors=True)
         # Remove any staged external audio for an abandoned task.
         if task.audio_dir and task.audio_dir.exists():
             shutil.rmtree(task.audio_dir, ignore_errors=True)
@@ -208,6 +211,21 @@ class TaskManager:
             dest = dest_dir / f"{stem}_{counter}{suffix}"
             counter += 1
         return dest
+
+    def local_video_dest(self, task: Task, name: str) -> Path:
+        """A destination path (inside the task's work dir) for an uploaded video.
+
+        Placing it under ``download_dir / token`` means the standard task
+        ``finally`` cleanup (which removes that directory) reclaims the file.
+        """
+
+        base = Path(name).name or "upload.mkv"
+        if Path(base).suffix.lower() not in _VIDEO_EXTS:
+            base += ".mkv"
+        dest_dir = self._cfg.download_dir / task.token
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        task.work_subdir = dest_dir
+        return dest_dir / base
 
     async def stage_remote_audio(self, task: Task, url: str) -> Path:
         """Download a remote audio file to the task's audio staging dir.
@@ -332,6 +350,21 @@ class TaskManager:
                     pg.render_progress(stage, done=done, total=total, speed=speed, eta=eta),
                     reply_markup=kb.cancel_only(task.token),
                 )
+
+        # A directly uploaded video file is already on disk inside work_subdir;
+        # there is nothing to leech, so skip straight to processing.
+        if task.spec.kind == SourceKind.LOCAL_FILE:
+            local = Path(task.spec.value)
+            if not local.is_file():
+                raise LeechError("The uploaded video file is no longer available.")
+            task.downloaded_files = [local]
+            if reporter:
+                await reporter.update(
+                    pg.render_status("Using Uploaded File", [local.name], emoji="📂"),
+                    reply_markup=kb.cancel_only(task.token),
+                    force=True,
+                )
+            return
 
         if reporter:
             await reporter.update(
