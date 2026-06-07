@@ -1,14 +1,17 @@
 """Wires Pyrogram update handlers to the :class:`TaskManager`.
 
 Responsibilities:
-* ``/start`` & ``/help`` command cards.
+* ``/start`` & ``/help`` (role-aware) command cards.
+* Admin commands: ``/stats``, ``/tasks``, ``/users`` (owner can add/remove users).
+* ``/addaudio`` (alias ``/muxaudio``) to attach external audio to a pending task.
 * Inbound source links / search queries -> inline selection menu.
 * Uploaded ``.torrent`` documents -> inline selection menu.
-* Callback button routing (start / filter / cancel / nyaa-pick).
+* Callback button routing (start / filter / cancel / nyaa-pick / add-audio).
 """
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 from pyrogram import Client, filters
@@ -42,6 +45,38 @@ _START_CARD = pg.render_status(
     emoji="🎬",
 )
 
+_ADD_AUDIO_PROMPT = pg.render_status(
+    "Add External Audio",
+    [
+        "Send me the audio now — upload a file or paste a direct link.",
+        "Formats: AAC, MP3, M4A, FLAC, Opus, OGG, WAV, AC3, E-AC3, DTS, ALAC, …",
+        "I'll then ask for its language and track name.",
+    ],
+    emoji="🎵",
+)
+
+
+def _fmt_age(seconds: float) -> str:
+    """Compact human duration, e.g. ``3s``, ``5m 02s``, ``2h 09m``, ``1d 03h``."""
+
+    secs = int(max(0, seconds))
+    if secs < 60:
+        return f"{secs}s"
+    mins, s = divmod(secs, 60)
+    if mins < 60:
+        return f"{mins}m {s:02d}s"
+    hours, m = divmod(mins, 60)
+    if hours < 24:
+        return f"{hours}h {m:02d}m"
+    days, h = divmod(hours, 24)
+    return f"{days}d {h:02d}h"
+
+
+def _monotonic_age(created_at: float) -> float:
+    """Seconds elapsed since a ``time.monotonic()`` timestamp."""
+
+    return max(0.0, time.monotonic() - created_at)
+
 
 def register(client: Client, manager: TaskManager, config: Config) -> None:
     """Attach all handlers to ``client``."""
@@ -49,13 +84,181 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
     def _authorized(user_id: int | None) -> bool:
         return config.is_user_allowed(user_id)
 
+    def _role(user_id: int | None) -> str:
+        if config.is_owner(user_id):
+            return "owner"
+        if config.is_admin(user_id):
+            return "admin"
+        return "user"
+
+    async def _deny(message: Message, *, admin: bool = False) -> None:
+        msg = (
+            "This command is for admins only."
+            if admin
+            else "You are not authorized to use this bot."
+        )
+        await message.reply_text(pg.render_error(msg), parse_mode=ParseMode.HTML)
+
+    def _help_card(user_id: int | None) -> str:
+        role = _role(user_id)
+        lines = [
+            "Send a direct link, magnet, .torrent file or a Nyaa.si link.",
+            "Or type any text to search Nyaa.si.",
+            "I leech it, build a clean Signs & Songs track and send it back.",
+            "",
+            "👤 Commands",
+            "• /start, /help — this message",
+            "• /addaudio — add an external audio track to the pending file",
+        ]
+        if role in ("admin", "owner"):
+            lines += [
+                "",
+                "🛡️ Admin",
+                "• /stats — bot uptime and task counters",
+                "• /tasks — live list of active tasks",
+                "• /users — list known users" + (" (add/remove)" if role == "owner" else ""),
+            ]
+        if role == "owner":
+            lines += ["• /users add <id> | /users remove <id> — manage access"]
+        lines += ["", f"Your role: {role}."]
+        return pg.render_status("Sign & Songs Leech Bot", lines, emoji="🎬")
+
     @client.on_message(filters.command(["start", "help"]) & filters.private)
     async def _on_start(_: Client, message: Message) -> None:
-        if not _authorized(message.from_user.id if message.from_user else None):
-            await message.reply_text(pg.render_error("You are not authorized to use this bot."),
-                                     parse_mode=ParseMode.HTML)
+        uid = message.from_user.id if message.from_user else None
+        if not _authorized(uid):
+            await _deny(message)
             return
-        await message.reply_text(_START_CARD, parse_mode=ParseMode.HTML)
+        await message.reply_text(_help_card(uid), parse_mode=ParseMode.HTML)
+
+    @client.on_message(filters.command("stats") & filters.private)
+    async def _on_stats(_: Client, message: Message) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not config.is_admin(uid):
+            await _deny(message, admin=True)
+            return
+        s = manager.stats()
+        per_state = s["per_state"] or {}  # type: ignore[assignment]
+        state_line = ", ".join(f"{k}:{v}" for k, v in per_state.items()) or "none"
+        await message.reply_text(
+            pg.render_status(
+                "Bot Stats",
+                [
+                    f"⏱️ Uptime: {_fmt_age(float(s['uptime_seconds']))}",
+                    f"📈 Tasks created: {s['total_created']}",
+                    f"🎉 Completed: {s['completed']}",
+                    f"❌ Failed: {s['failed']}",
+                    f"🛑 Cancelled: {s['cancelled']}",
+                    f"▶️ Active now: {s['active']} / {s['max_concurrent']} slots",
+                    f"📦 Tracked: {s['tracked']} ({state_line})",
+                    f"👥 Unique users: {s['unique_users']}",
+                ],
+                emoji="📊",
+            ),
+            parse_mode=ParseMode.HTML,
+        )
+
+    @client.on_message(filters.command("tasks") & filters.private)
+    async def _on_tasks(_: Client, message: Message) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not config.is_admin(uid):
+            await _deny(message, admin=True)
+            return
+        tasks = manager.list_tasks()
+        if not tasks:
+            await message.reply_text(
+                pg.render_status("Active Tasks", ["No tasks right now."], emoji="📭"),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        lines: list[str] = []
+        for t in tasks[:20]:
+            running = "▶️" if t.token in {x.token for x in manager.active_tasks()} else "⏸️"
+            lines.append(
+                f"{running} {t.state.value} · {t.spec.label[:34]} "
+                f"· u{t.user_id} · {_fmt_age(_monotonic_age(t.created_at))}"
+            )
+        if len(tasks) > 20:
+            lines.append(f"… and {len(tasks) - 20} more")
+        await message.reply_text(
+            pg.render_status("Active Tasks", lines, emoji="🗂️"),
+            parse_mode=ParseMode.HTML,
+        )
+
+    @client.on_message(filters.command("users") & filters.private)
+    async def _on_users(_: Client, message: Message) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not config.is_admin(uid):
+            await _deny(message, admin=True)
+            return
+        parts = (message.text or "").split()
+        # Owner-only mutations: /users add <id> | /users remove <id>
+        if len(parts) >= 3 and parts[1].lower() in {"add", "remove", "del"}:
+            if not config.is_owner(uid):
+                await _deny(message, admin=True)
+                return
+            if not parts[2].lstrip("-").isdigit():
+                await message.reply_text(
+                    pg.render_error("Usage", "/users add <id>  |  /users remove <id>"),
+                    parse_mode=ParseMode.HTML,
+                )
+                return
+            target = int(parts[2])
+            if parts[1].lower() == "add":
+                config.extra_allowed_ids.add(target)
+                note = f"Authorized user {target}."
+            else:
+                config.extra_allowed_ids.discard(target)
+                note = f"Revoked user {target}."
+            await message.reply_text(
+                pg.render_status("Users Updated", [note], emoji="✅"),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        # Default: list known users and their roles.
+        seen = manager.seen_user_ids()
+        lines: list[str] = []
+        if config.owner_id:
+            lines.append(f"👑 Owner: {config.owner_id}")
+        if config.admin_ids:
+            lines.append("🛡️ Admins: " + ", ".join(str(i) for i in sorted(config.admin_ids)))
+        allow = sorted(set(config.allowed_user_ids) | config.extra_allowed_ids)
+        lines.append("✅ Allow-list: " + (", ".join(str(i) for i in allow) if allow else "open to all"))
+        lines.append("")
+        lines.append(f"👥 Seen users ({len(seen)}): " + (", ".join(str(i) for i in seen) or "none"))
+        await message.reply_text(
+            pg.render_status("Users", lines, emoji="👥"),
+            parse_mode=ParseMode.HTML,
+        )
+
+    @client.on_message(filters.command(["addaudio", "muxaudio"]) & filters.private)
+    async def _on_addaudio(_: Client, message: Message) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not _authorized(uid):
+            await _deny(message)
+            return
+        pending = [
+            t for t in manager.list_tasks()
+            if t.chat_id == message.chat.id and t.state == TaskState.PENDING
+        ]
+        if not pending:
+            await message.reply_text(
+                pg.render_status(
+                    "Add External Audio",
+                    [
+                        "Send a source first (link / magnet / .torrent / Nyaa),",
+                        "then use /addaudio or the 🎵 Add Audio button before starting.",
+                    ],
+                    emoji="🎵",
+                ),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        task = pending[0]
+        task.audio_stage = AUDIO_AWAIT_FILE
+        task.audio_draft = None
+        await message.reply_text(_ADD_AUDIO_PROMPT, parse_mode=ParseMode.HTML,
+                                 reply_markup=kb.cancel_only(task.token))
 
     @client.on_message((filters.audio | filters.voice) & filters.private)
     async def _on_audio(_: Client, message: Message) -> None:
@@ -118,7 +321,11 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             reply_markup=kb.source_menu(task.token),
         )
 
-    @client.on_message(filters.text & filters.private & ~filters.command(["start", "help"]))
+    @client.on_message(
+        filters.text
+        & filters.private
+        & ~filters.command(["start", "help", "stats", "tasks", "users", "addaudio", "muxaudio"])
+    )
     async def _on_text(_: Client, message: Message) -> None:
         if not _authorized(message.from_user.id if message.from_user else None):
             return

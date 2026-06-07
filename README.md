@@ -121,7 +121,9 @@ cp .env.example .env       # then edit the three values below
 | `TELEGRAM_API_HASH` | ✅ | API hash from my.telegram.org |
 | `BOT_TOKEN` | ✅ | Bot token from @BotFather |
 | `WORK_DIR` | | Working dir for downloads + session (default `./data`, `/data` in Docker) |
-| `ALLOWED_USERS` | | Comma-separated user IDs allowed to use the bot (default: everyone) |
+| `OWNER_ID` | | Owner's Telegram user ID — full control, incl. `/users add\|remove` |
+| `ADMINS` | | Comma/space-separated admin IDs — may use `/stats`, `/tasks`, `/users` |
+| `ALLOWED_USERS` | | User IDs allowed to use the bot (default: everyone; owner/admins always allowed) |
 | `MAX_CONCURRENT_TASKS` | | Max simultaneous tasks (default `3`) |
 
 ## ▶️ Run
@@ -136,6 +138,21 @@ Then DM the bot:
 - any **text** to search Nyaa.si and pick a result,
 
 and use the inline buttons to start, add audio, inspect the filter policy, or cancel.
+
+## 🤖 Commands & roles
+
+There are three roles: **owner** (`OWNER_ID`) ▸ **admin** (`ADMINS`) ▸ **user**
+(`ALLOWED_USERS`, or everyone if the allow-list is empty). Owner and admins are
+always allowed regardless of the allow-list.
+
+| Command | Who | What |
+|---|---|---|
+| `/start`, `/help` | everyone | Role-aware help card |
+| `/addaudio` (`/muxaudio`) | users | Add an external audio track to the pending file before starting (same as the 🎵 button) |
+| `/stats` | admin/owner | Uptime, tasks created, completed/failed/cancelled, active vs. slots, unique users |
+| `/tasks` | admin/owner | Live list of tracked tasks with state, label, owner and age |
+| `/users` | admin/owner | List owner/admins/allow-list and seen users |
+| `/users add <id>` · `/users remove <id>` | owner | Authorize / revoke a user at runtime (not persisted across restarts) |
 
 ## 🐳 Docker
 

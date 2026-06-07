@@ -46,6 +46,16 @@ class TaskManager:
         self._runners: dict[str, asyncio.Task] = {}
         self._semaphore = asyncio.Semaphore(config.max_concurrent_tasks)
 
+        # Lightweight bot-wide metrics for the /stats and /users commands.
+        self._started_at = time.time()
+        self._total_created = 0
+        self._outcomes: dict[TaskState, int] = {
+            TaskState.DONE: 0,
+            TaskState.FAILED: 0,
+            TaskState.CANCELLED: 0,
+        }
+        self._seen_users: set[int] = set()
+
         self._daemon = Aria2Daemon(config)
         self._aria2 = Aria2Client(config.aria2_rpc_url, config.aria2_secret)
         self._scraper = NyaaScraper()
@@ -78,6 +88,9 @@ class TaskManager:
             spec=spec,
         )
         self._tasks[token] = task
+        self._total_created += 1
+        if user_id:
+            self._seen_users.add(user_id)
         return task
 
     def _prune_stale(self) -> None:
@@ -127,6 +140,40 @@ class TaskManager:
     @property
     def scraper(self) -> NyaaScraper:
         return self._scraper
+
+    # -- introspection (admin commands) -------------------------------------
+
+    def list_tasks(self) -> list[Task]:
+        """All tasks currently tracked (pending + active), newest first."""
+
+        return sorted(self._tasks.values(), key=lambda t: t.created_at, reverse=True)
+
+    def active_tasks(self) -> list[Task]:
+        """Tasks that have a running coroutine (i.e. past the menu stage)."""
+
+        return [t for t in self.list_tasks() if t.token in self._runners]
+
+    def seen_user_ids(self) -> list[int]:
+        return sorted(self._seen_users)
+
+    def stats(self) -> dict[str, object]:
+        """A snapshot of bot-wide counters for the /stats command."""
+
+        per_state: dict[str, int] = {}
+        for task in self._tasks.values():
+            per_state[task.state.value] = per_state.get(task.state.value, 0) + 1
+        return {
+            "uptime_seconds": max(0.0, time.time() - self._started_at),
+            "total_created": self._total_created,
+            "completed": self._outcomes[TaskState.DONE],
+            "failed": self._outcomes[TaskState.FAILED],
+            "cancelled": self._outcomes[TaskState.CANCELLED],
+            "active": len(self._runners),
+            "tracked": len(self._tasks),
+            "unique_users": len(self._seen_users),
+            "per_state": per_state,
+            "max_concurrent": self._cfg.max_concurrent_tasks,
+        }
 
     # -- external audio -----------------------------------------------------
 
@@ -269,6 +316,8 @@ class TaskManager:
             if reporter:
                 await reporter.finalize(pg.render_error("Unexpected failure", repr(exc)))
         finally:
+            if task.state in self._outcomes:
+                self._outcomes[task.state] += 1
             await self._cleanup(task)
             self._tasks.pop(task.token, None)
 
