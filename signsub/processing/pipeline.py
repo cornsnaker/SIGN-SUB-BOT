@@ -146,6 +146,17 @@ class SubtitlePipeline:
             "-map", "0:t?",                  # attachments / fonts (optional)
             "-c", "copy",
         ]
+        # Re-encode each appended external audio to AAC. Stream-copying an
+        # arbitrary uploaded audio (FLAC/Opus/AC3/DTS/…) into MKV often plays
+        # silently in players with limited codec support (incl. Telegram's
+        # in-app player); AAC stereo is universally decodable.
+        for j in range(len(valid_audios)):
+            out_audio_index = original_audio_count + j
+            remux_cmd += [
+                f"-c:a:{out_audio_index}", "aac",
+                f"-b:a:{out_audio_index}", "192k",
+                f"-ac:a:{out_audio_index}", "2",
+            ]
         # Tag the new signs subtitle track.
         remux_cmd += [
             f"-metadata:s:s:{new_track_sub_index}", "language=eng",
@@ -160,6 +171,14 @@ class SubtitlePipeline:
             ]
             if audio.title:
                 remux_cmd += [f"-metadata:s:a:{out_audio_index}", f"title={audio.title}"]
+        # When the user explicitly adds audio, make the first added track the
+        # default one so it actually plays (otherwise the player keeps the
+        # original track and the new audio seems "muted"). Clear default off the
+        # original audio streams so exactly one default remains.
+        if valid_audios:
+            for i in range(original_audio_count):
+                remux_cmd += [f"-disposition:a:{i}", "0"]
+            remux_cmd += [f"-disposition:a:{original_audio_count}", "default"]
         remux_cmd.append(str(output))
 
         await self._run_with_progress(remux_cmd, duration, progress_cb, "Remuxing")
