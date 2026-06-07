@@ -14,6 +14,7 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import aiohttp
 from pyrogram import Client
 
 from ..config import Config
@@ -27,7 +28,7 @@ from ..ui import progress as pg
 from ..upload.uploader import Uploader
 from .sources import SourceKind, SourceSpec
 from .status import StatusReporter
-from .task import Task, TaskState, new_token
+from .task import AUDIO_AWAIT_FILE, Task, TaskState, new_token
 
 _VIDEO_EXTS = {".mkv", ".mp4", ".m4v", ".mov", ".webm", ".ts"}
 # Evict tasks the user created but never started after this long, and never
@@ -115,6 +116,9 @@ class TaskManager:
                 Path(task.spec.value).unlink(missing_ok=True)
             except OSError:
                 pass
+        # Remove any staged external audio for an abandoned task.
+        if task.audio_dir and task.audio_dir.exists():
+            shutil.rmtree(task.audio_dir, ignore_errors=True)
 
     def get(self, token: str) -> Optional[Task]:
         return self._tasks.get(token)
@@ -122,6 +126,43 @@ class TaskManager:
     @property
     def scraper(self) -> NyaaScraper:
         return self._scraper
+
+    # -- external audio -----------------------------------------------------
+
+    def awaiting_audio_task(self, chat_id: int) -> Optional[Task]:
+        """Return the (un-started) task in ``chat_id`` waiting for an audio file."""
+
+        for task in self._tasks.values():
+            if (
+                task.chat_id == chat_id
+                and task.state == TaskState.PENDING
+                and task.audio_stage == AUDIO_AWAIT_FILE
+            ):
+                return task
+        return None
+
+    def audio_dir_for(self, task: Task) -> Path:
+        """Per-task staging directory for external audio uploads/downloads."""
+
+        if task.audio_dir is None:
+            task.audio_dir = self._cfg.download_dir / "audio" / task.token
+        task.audio_dir.mkdir(parents=True, exist_ok=True)
+        return task.audio_dir
+
+    async def stage_remote_audio(self, task: Task, url: str) -> Path:
+        """Download a remote audio file to the task's audio staging dir."""
+
+        dest_dir = self.audio_dir_for(task)
+        name = url.split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1] or "audio"
+        dest = dest_dir / name
+        timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=300)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url) as resp:
+                resp.raise_for_status()
+                with dest.open("wb") as fh:
+                    async for chunk in resp.content.iter_chunked(1 << 16):
+                        fh.write(chunk)
+        return dest
 
     def attach_reporter(self, task: Task, reporter: StatusReporter) -> None:
         task.reporter = reporter
@@ -252,19 +293,20 @@ class TaskManager:
                 force=True,
             )
 
-        result = await self._pipeline.process(target, progress_cb=progress)
+        result = await self._pipeline.process(
+            target, progress_cb=progress, extra_audios=task.extra_audios
+        )
         task.produced_files.append(result.output_path)
         if reporter:
+            done_lines = [
+                f"Source track: #{result.source_stream_index}",
+                f"Signs kept: {result.events_kept} | dialogue dropped: {result.events_dropped}",
+                f"English subtitle tracks retained: {result.english_sub_count}",
+            ]
+            if result.extra_audio_count:
+                done_lines.append(f"External audio tracks added: {result.extra_audio_count}")
             await reporter.update(
-                pg.render_status(
-                    "Pipeline Done",
-                    [
-                        f"Source track: #{result.source_stream_index}",
-                        f"Signs kept: {result.events_kept} | dialogue dropped: {result.events_dropped}",
-                        f"English subtitle tracks retained: {result.english_sub_count}",
-                    ],
-                    emoji="✅",
-                ),
+                pg.render_status("Pipeline Done", done_lines, emoji="✅"),
                 force=True,
             )
         return result.output_path
@@ -307,6 +349,8 @@ class TaskManager:
                 pass
         if task.work_subdir and task.work_subdir.exists():
             shutil.rmtree(task.work_subdir, ignore_errors=True)
+        if task.audio_dir and task.audio_dir.exists():
+            shutil.rmtree(task.audio_dir, ignore_errors=True)
         # Defensive: remove any stray produced/temp files outside the subdir.
         for path in [*task.produced_files]:
             try:

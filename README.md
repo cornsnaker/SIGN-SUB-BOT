@@ -9,7 +9,8 @@ clean `{name}_clean_english.mkv` back to you.
 ## Features
 
 - **MarkdownV2 quoted UI** — every notification renders inside Telegram `>` blockquotes.
-- **Inline keyboards** — `📥 Start Download` · `⚙️ Filter Streams` · `❌ Cancel Task`.
+- **Inline keyboards** — `📥 Start Download` · `⚙️ Filter Streams` · `🎵 Add Audio` · `❌ Cancel Task`.
+- **Add external audio** — before starting, attach extra audio tracks (upload a file or paste a direct link), then pick the track's **language** and **title** entirely via buttons. Accepts common formats (AAC, MP3, M4A, FLAC, Opus, OGG, WAV, AC3, E-AC3, DTS, ALAC, WMA, MKA, …). The remux muxes them in alongside the originals with `language`/`title` metadata.
 - **Live emoji progress bars** with speed / ETA / processed stats for download, processing and upload.
 - **aria2c JSON-RPC leeching core** (async) — multi-connection direct downloads, magnets and torrents, with the magnet→metadata→torrent hand-off handled automatically.
 - **Nyaa.si scraper** — RSS-first with an HTML fallback; search by text or paste a `/view/` link.

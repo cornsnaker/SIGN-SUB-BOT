@@ -31,6 +31,22 @@ def new_token() -> str:
     return secrets.token_urlsafe(6)
 
 
+# Stage markers for the interactive "add external audio" flow.
+AUDIO_AWAIT_FILE = "await_file"
+AUDIO_AWAIT_LANG = "await_lang"
+AUDIO_AWAIT_NAME = "await_name"
+
+
+@dataclass(slots=True)
+class ExtraAudio:
+    """An external audio track to mux into the final file."""
+
+    path: Path
+    label: str                      # display name (original filename / link)
+    language: str = "und"           # ISO 639-2 code, e.g. ``eng``
+    title: str = ""                 # human title set on the muxed track
+
+
 @dataclass(slots=True)
 class Task:
     token: str
@@ -52,6 +68,13 @@ class Task:
 
     # Populated when a Nyaa search yields multiple choices.
     nyaa_choices: list = field(default_factory=list)
+
+    # External audio tracks the user opted to mux in, plus the interactive
+    # collection state (None when not currently adding an audio track).
+    extra_audios: list[ExtraAudio] = field(default_factory=list)
+    audio_stage: Optional[str] = None
+    audio_draft: Optional[ExtraAudio] = None
+    audio_dir: Optional[Path] = None
 
     @property
     def cancelled(self) -> bool:

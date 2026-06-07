@@ -40,6 +40,9 @@ class MediaInfo:
     def subtitles(self) -> list[Stream]:
         return [s for s in self.streams if s.is_subtitle]
 
+    def audios(self) -> list[Stream]:
+        return [s for s in self.streams if s.codec_type == "audio"]
+
     def first_english_ass(self) -> Optional[Stream]:
         """Return the first English ASS/SSA subtitle stream, if any."""
 

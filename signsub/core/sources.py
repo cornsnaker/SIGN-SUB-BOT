@@ -28,6 +28,23 @@ _MAGNET_RE = re.compile(r"^magnet:\?", re.IGNORECASE)
 _URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 _NYAA_VIEW_RE = re.compile(r"https?://nyaa\.si/view/\d+", re.IGNORECASE)
 
+# Common audio container/codec extensions accepted as external audio tracks.
+AUDIO_EXTS = {
+    ".aac", ".mp3", ".m4a", ".m4b", ".flac", ".opus", ".ogg", ".oga",
+    ".wav", ".ac3", ".eac3", ".dts", ".wma", ".alac", ".mka", ".aiff",
+    ".aif", ".ape", ".wv", ".mp2", ".mpa", ".caf",
+}
+
+
+def is_audio_url(text: str) -> bool:
+    """True if ``text`` is an http(s) URL with a known audio extension."""
+
+    candidate = text.strip().lower()
+    if not _URL_RE.match(candidate):
+        return False
+    path = candidate.split("?", 1)[0]
+    return any(path.endswith(ext) for ext in AUDIO_EXTS)
+
 
 def classify(text: str) -> Optional[SourceSpec]:
     """Classify a raw text message into a :class:`SourceSpec`.

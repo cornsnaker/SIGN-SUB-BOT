@@ -17,11 +17,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Awaitable, Callable, Optional
+from typing import TYPE_CHECKING, Awaitable, Callable, Optional, Sequence
 
 from ..config import Config
 from ..core import proc
 from . import ffprobe
+
+if TYPE_CHECKING:
+    from ..core.task import ExtraAudio
 
 ProgressCb = Callable[[str, float, float], Awaitable[None]]
 
@@ -37,6 +40,7 @@ class PipelineResult:
     events_dropped: int
     english_sub_count: int
     temp_files: list[Path]
+    extra_audio_count: int = 0
 
 
 class PipelineError(RuntimeError):
@@ -47,17 +51,27 @@ class SubtitlePipeline:
     def __init__(self, config: Config) -> None:
         self._cfg = config
 
-    async def process(self, mkv_path: Path, progress_cb: Optional[ProgressCb] = None) -> PipelineResult:
+    async def process(
+        self,
+        mkv_path: Path,
+        progress_cb: Optional[ProgressCb] = None,
+        *,
+        extra_audios: Optional[Sequence["ExtraAudio"]] = None,
+    ) -> PipelineResult:
         temp_files: list[Path] = []
         try:
-            return await self._run(mkv_path, progress_cb, temp_files)
+            return await self._run(mkv_path, progress_cb, temp_files, extra_audios or [])
         except Exception:
             for tmp in temp_files:
                 _safe_unlink(tmp)
             raise
 
     async def _run(
-        self, mkv_path: Path, progress_cb: Optional[ProgressCb], temp_files: list[Path]
+        self,
+        mkv_path: Path,
+        progress_cb: Optional[ProgressCb],
+        temp_files: list[Path],
+        extra_audios: Sequence["ExtraAudio"],
     ) -> PipelineResult:
         if not mkv_path.is_file():
             raise PipelineError(f"Input file does not exist: {mkv_path}")
@@ -104,35 +118,44 @@ class SubtitlePipeline:
         # -- Stage 4: remux -----------------------------------------------
         english_subs = [s for s in info.subtitles() if s.is_english]
         new_track_sub_index = len(english_subs)
+        original_audio_count = len(info.audios())
+        valid_audios = [a for a in extra_audios if Path(a.path).is_file()]
         duration = await self._duration(mkv_path)
 
-        remux_cmd = [
-            self._cfg.ffmpeg_bin,
-            "-y",
-            "-i",
-            str(mkv_path),
-            "-i",
-            str(signs_ass),
-            "-map",
-            "0:v",
-            "-map",
-            "0:a",
-            "-map",
-            "0:s:m:language:eng?",  # only English-tagged subtitles
-            "-map",
-            "1:s:0",  # the new signs-only track
-            "-map",
-            "0:t?",  # attachments / fonts (optional)
-            "-c",
-            "copy",
-            f"-metadata:s:s:{new_track_sub_index}",
-            "language=eng",
-            f"-metadata:s:s:{new_track_sub_index}",
-            "title=Signs & Songs",
-            "-disposition:s:" + str(new_track_sub_index),
-            "default",
-            str(output),
+        remux_cmd = [self._cfg.ffmpeg_bin, "-y", "-i", str(mkv_path), "-i", str(signs_ass)]
+        # External audio inputs occupy ffmpeg input indices 2, 3, ...
+        for audio in valid_audios:
+            remux_cmd += ["-i", str(audio.path)]
+
+        remux_cmd += [
+            "-map", "0:v",
+            "-map", "0:a",
         ]
+        # Map each external audio's first audio stream, in order.
+        for offset in range(len(valid_audios)):
+            remux_cmd += ["-map", f"{2 + offset}:a:0"]
+        remux_cmd += [
+            "-map", "0:s:m:language:eng?",  # only English-tagged subtitles
+            "-map", "1:s:0",                 # the new signs-only track
+            "-map", "0:t?",                  # attachments / fonts (optional)
+            "-c", "copy",
+        ]
+        # Tag the new signs subtitle track.
+        remux_cmd += [
+            f"-metadata:s:s:{new_track_sub_index}", "language=eng",
+            f"-metadata:s:s:{new_track_sub_index}", "title=Signs & Songs",
+            f"-disposition:s:{new_track_sub_index}", "default",
+        ]
+        # Tag each appended audio track (output audio index = originals + j).
+        for j, audio in enumerate(valid_audios):
+            out_audio_index = original_audio_count + j
+            remux_cmd += [
+                f"-metadata:s:a:{out_audio_index}", f"language={audio.language or 'und'}",
+            ]
+            if audio.title:
+                remux_cmd += [f"-metadata:s:a:{out_audio_index}", f"title={audio.title}"]
+        remux_cmd.append(str(output))
+
         await self._run_with_progress(remux_cmd, duration, progress_cb, "Remuxing")
         if not output.is_file():
             raise PipelineError("Remux completed but the output file is missing.")
@@ -146,6 +169,7 @@ class SubtitlePipeline:
             events_dropped=dropped,
             english_sub_count=len(english_subs),
             temp_files=[temp_ass, signs_ass],
+            extra_audio_count=len(valid_audios),
         )
 
     async def _run_with_progress(
