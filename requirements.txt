@@ -1,0 +1,6 @@
+# Telegram MTProto client (large-file chunked uploads, inline keyboards).
+pyrogram==2.0.106
+# Native crypto acceleration for Pyrogram (faster up/downloads).
+tgcrypto==1.2.5
+# Async HTTP for the aria2 JSON-RPC client, Nyaa scraper and torrent fetches.
+aiohttp==3.10.11

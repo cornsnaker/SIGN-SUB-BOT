@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Runtime / secrets
+.env
+*.session
+*.session-journal
+
+# Bot working data
+downloads/
+data/
+*.ass
+*.torrent
+*.mkv
+
+# OS
+.DS_Store
