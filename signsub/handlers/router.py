@@ -27,6 +27,7 @@ from ..core.task import (
     Task,
     TaskState,
 )
+from ..leech import torrent_meta
 from ..ui import keyboards as kb
 from ..ui import fmt as md
 from ..ui import progress as pg
@@ -100,7 +101,10 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
         dest_dir = config.download_dir / "torrents"
         dest_dir.mkdir(parents=True, exist_ok=True)
         local_path = await message.download(file_name=str(dest_dir / doc.file_name))
-        spec = sources.torrent_file_spec(str(local_path), doc.file_name)
+        # Prefer the real media name stored inside the .torrent (info.name).
+        inner = torrent_meta.torrent_name(local_path)
+        label = inner or doc.file_name
+        spec = sources.torrent_file_spec(str(local_path), label)
         task = manager.create_task(
             chat_id=message.chat.id,
             user_id=message.from_user.id if message.from_user else 0,
@@ -108,7 +112,7 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             spec=spec,
         )
         await message.reply_text(
-            pg.render_status("Source Received", [f"📦 {doc.file_name}", "Choose an action:"],
+            pg.render_status("Source Received", [f"📦 {label}", "Choose an action:"],
                              emoji="🧲"),
             parse_mode=ParseMode.HTML,
             reply_markup=kb.source_menu(task.token),
@@ -292,8 +296,7 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             parse_mode=ParseMode.HTML,
         )
         try:
-            dest_dir = manager.audio_dir_for(task)
-            local = await message.download(file_name=str(dest_dir / file_name))
+            local = await message.download(file_name=str(manager.audio_dest(task, file_name)))
         except Exception as exc:  # noqa: BLE001
             await status.edit_text(pg.render_error("Could not save that audio", repr(exc)),
                                    parse_mode=ParseMode.HTML)

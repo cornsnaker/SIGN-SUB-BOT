@@ -64,6 +64,17 @@ def percent_of(done: float, total: float) -> float:
     return (done / total) * 100.0
 
 
+def _transfer_noun(stage: str) -> str:
+    """Pick the right past-tense noun for the byte counter line."""
+
+    low = stage.lower()
+    if "upload" in low:
+        return "Uploaded"
+    if "download" in low or "leech" in low:
+        return "Downloaded"
+    return "Processed"
+
+
 def render_progress(
     stage: str,
     *,
@@ -75,23 +86,28 @@ def render_progress(
 ) -> str:
     """Render a full progress card as a blockquote (the ``> Quote`` layout).
 
-    Rendered shape (sent as HTML so Telegram shows a native blockquote)::
+    Each statistic sits on its own quoted line for an easy-to-scan card
+    (sent as HTML so Telegram shows a native blockquote)::
 
         > 🔄 Downloading
-        > Speed: `12.4 MB/s` | ETA: `00:01:42`
-        > Processed: `450 MB / 900 MB`
-        > [■■■■■□□□□□] `50%`
+        > ⚡ Speed: `12.4 MB/s`
+        > ⏳ ETA: `00:01:42`
+        > 📦 Downloaded: `450 MB / 900 MB`
+        > 📊 Progress: `50%`
+        > [■■■■■□□□□□]
     """
 
     pct = percent_of(done, total) if total else 0.0
     lines = [
         md.bold(f"🔄 {md.escape(stage)}"),
-        f"Speed: {md.code(human_speed(speed))} | ETA: {md.code(human_eta(eta))}",
-        f"Processed: {md.code(f'{human_size(done)} / {human_size(total)}')}",
-        f"[{bar(pct)}] {md.code(f'{pct:.1f}%')}",
+        f"⚡ Speed: {md.code(human_speed(speed))}",
+        f"⏳ ETA: {md.code(human_eta(eta))}",
+        f"📦 {_transfer_noun(stage)}: {md.code(f'{human_size(done)} / {human_size(total)}')}",
+        f"📊 Progress: {md.code(f'{pct:.1f}%')}",
+        f"[{bar(pct)}]",
     ]
     if extra:
-        lines.append(md.escape(extra))
+        lines.append(f"📝 {md.escape(extra)}")
     return md.quote_block(lines)
 
 

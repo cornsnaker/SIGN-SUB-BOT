@@ -92,5 +92,7 @@ def _magnet_label(magnet: str) -> str:
 
 
 def _basename(url: str) -> str:
-    tail = url.split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1]
-    return tail[:48] or url[:48]
+    from ..leech.torrent_meta import filename_from_url
+
+    name = filename_from_url(url)
+    return (name or url)[:64]

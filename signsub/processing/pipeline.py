@@ -15,6 +15,7 @@ Pipeline stages:
 from __future__ import annotations
 
 import re
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Awaitable, Callable, Optional, Sequence
@@ -180,19 +181,24 @@ class SubtitlePipeline:
         stage: str,
     ) -> None:
         rc = 0
-        last_tail = ""
+        recent: deque[str] = deque(maxlen=40)
         async for line in proc.stream_stderr(cmd):
             if line.startswith("__RC__:"):
                 rc = int(line.split(":", 1)[1])
                 continue
-            last_tail = line
+            # ffmpeg emits a continuous in-place progress line; don't let it
+            # crowd out the real diagnostics in the rolling buffer.
+            if not _TIME_RE.search(line):
+                recent.append(line)
             match = _TIME_RE.search(line)
             if match and duration > 0 and progress_cb:
                 hrs, mins, secs = match.groups()
                 done = int(hrs) * 3600 + int(mins) * 60 + float(secs)
                 await progress_cb(stage, min(done, duration), duration)
         if rc != 0:
-            raise PipelineError(f"FFmpeg {stage.lower()} failed (rc={rc}): {last_tail[-300:]}")
+            raise PipelineError(
+                f"FFmpeg {stage.lower()} failed (rc={rc}): {_ffmpeg_error_summary(recent)}"
+            )
         if progress_cb and duration > 0:
             await progress_cb(stage, duration, duration)
 
@@ -217,6 +223,31 @@ class SubtitlePipeline:
     async def _emit(cb: Optional[ProgressCb], stage: str, done: float, total: float) -> None:
         if cb:
             await cb(stage, done, total)
+
+
+_ERROR_HINTS = (
+    "error", "invalid", "could not", "cannot", "no such", "failed",
+    "unable", "not found", "permission", "denied", "unsupported",
+    "incorrect", "conversion failed", "unknown", "not currently supported",
+)
+
+
+def _ffmpeg_error_summary(recent: "deque[str]") -> str:
+    """Build a useful error string from the tail of ffmpeg's stderr.
+
+    ffmpeg's final line is usually a generic ``Error opening output files:
+    Invalid argument``; the actionable diagnostic (e.g. an unsupported codec
+    or a bad stream map) appears earlier. We surface the most relevant
+    error-looking lines so failures are diagnosable instead of opaque.
+    """
+
+    lines = [ln for ln in recent if ln.strip()]
+    if not lines:
+        return "no stderr captured"
+    flagged = [ln for ln in lines if any(h in ln.lower() for h in _ERROR_HINTS)]
+    chosen = flagged[-4:] if flagged else lines[-4:]
+    summary = " | ".join(chosen)
+    return summary[-500:]
 
 
 def _filter_ass(temp_ass: Path, output_ass: Path) -> tuple[int, int]:

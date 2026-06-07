@@ -18,6 +18,7 @@ import aiohttp
 from pyrogram import Client
 
 from ..config import Config
+from ..leech import torrent_meta
 from ..leech.aria2_client import Aria2Client
 from ..leech.daemon import Aria2Daemon
 from ..leech.engine import LeechEngine, LeechError
@@ -149,16 +150,37 @@ class TaskManager:
         task.audio_dir.mkdir(parents=True, exist_ok=True)
         return task.audio_dir
 
-    async def stage_remote_audio(self, task: Task, url: str) -> Path:
-        """Download a remote audio file to the task's audio staging dir."""
+    def audio_dest(self, task: Task, name: str) -> Path:
+        """A collision-free destination path for an audio file named ``name``."""
 
         dest_dir = self.audio_dir_for(task)
-        name = url.split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1] or "audio"
-        dest = dest_dir / name
+        dest = dest_dir / (name or "audio")
+        stem, suffix = dest.stem, dest.suffix
+        counter = 1
+        while dest.exists():
+            dest = dest_dir / f"{stem}_{counter}{suffix}"
+            counter += 1
+        return dest
+
+    async def stage_remote_audio(self, task: Task, url: str) -> Path:
+        """Download a remote audio file to the task's audio staging dir.
+
+        The filename is taken from the ``Content-Disposition`` header when the
+        server provides one, otherwise from the URL's (percent-decoded) path.
+        """
+
         timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=300)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url) as resp:
                 resp.raise_for_status()
+                name = (
+                    torrent_meta.filename_from_content_disposition(
+                        resp.headers.get("Content-Disposition")
+                    )
+                    or torrent_meta.filename_from_url(url)
+                    or "audio"
+                )
+                dest = self.audio_dest(task, name)
                 with dest.open("wb") as fh:
                     async for chunk in resp.content.iter_chunked(1 << 16):
                         fh.write(chunk)
@@ -175,6 +197,12 @@ class TaskManager:
         runner = self._runners.get(token)
         if runner:
             runner.cancel()
+        else:
+            # No runner means the task was never launched (still collecting a
+            # source/audio). Drop it now so it stops intercepting messages and
+            # its staged audio is cleaned up; a running task is cleaned by its
+            # own finally-block instead.
+            self._discard_pending(token)
         return True
 
     def launch(self, task: Task) -> bool:
