@@ -15,6 +15,7 @@ class SourceKind(str, Enum):
     NYAA_VIEW = "nyaa_view"
     NYAA_SEARCH = "nyaa_search"
     TORRENT_FILE = "torrent_file"  # an uploaded .torrent document
+    LOCAL_FILE = "local_file"  # an uploaded video file already on disk
 
 
 @dataclass(slots=True)
@@ -27,6 +28,23 @@ class SourceSpec:
 _MAGNET_RE = re.compile(r"^magnet:\?", re.IGNORECASE)
 _URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 _NYAA_VIEW_RE = re.compile(r"https?://nyaa\.si/view/\d+", re.IGNORECASE)
+
+# Common audio container/codec extensions accepted as external audio tracks.
+AUDIO_EXTS = {
+    ".aac", ".mp3", ".m4a", ".m4b", ".flac", ".opus", ".ogg", ".oga",
+    ".wav", ".ac3", ".eac3", ".dts", ".wma", ".alac", ".mka", ".aiff",
+    ".aif", ".ape", ".wv", ".mp2", ".mpa", ".caf",
+}
+
+
+def is_audio_url(text: str) -> bool:
+    """True if ``text`` is an http(s) URL with a known audio extension."""
+
+    candidate = text.strip().lower()
+    if not _URL_RE.match(candidate):
+        return False
+    path = candidate.split("?", 1)[0]
+    return any(path.endswith(ext) for ext in AUDIO_EXTS)
 
 
 def classify(text: str) -> Optional[SourceSpec]:
@@ -64,6 +82,22 @@ def torrent_file_spec(path: str, label: str) -> SourceSpec:
     return SourceSpec(SourceKind.TORRENT_FILE, path, label)
 
 
+# Video container extensions accepted as a direct upload to run the pipeline on.
+VIDEO_EXTS = {".mkv", ".mp4", ".m4v", ".mov", ".webm", ".ts"}
+
+
+def is_video_filename(name: str) -> bool:
+    """True if ``name`` ends with a known video container extension."""
+
+    from pathlib import PurePosixPath
+
+    return PurePosixPath(name.lower()).suffix in VIDEO_EXTS
+
+
+def local_file_spec(path: str, label: str) -> SourceSpec:
+    return SourceSpec(SourceKind.LOCAL_FILE, path, label)
+
+
 def _magnet_label(magnet: str) -> str:
     match = re.search(r"[?&]dn=([^&]+)", magnet)
     if match:
@@ -75,5 +109,7 @@ def _magnet_label(magnet: str) -> str:
 
 
 def _basename(url: str) -> str:
-    tail = url.split("?", 1)[0].rstrip("/").rsplit("/", 1)[-1]
-    return tail[:48] or url[:48]
+    from ..leech.torrent_meta import filename_from_url
+
+    name = filename_from_url(url)
+    return (name or url)[:64]

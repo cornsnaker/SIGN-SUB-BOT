@@ -43,6 +43,16 @@ def _get_int(name: str, default: int) -> int:
         return default
 
 
+def _parse_ids(raw: str) -> frozenset[int]:
+    """Parse a comma/space separated list of integer user IDs."""
+
+    return frozenset(
+        int(tok)
+        for tok in raw.replace(",", " ").split()
+        if tok.strip().lstrip("-").isdigit()
+    )
+
+
 def _get_bool(name: str, default: bool) -> bool:
     raw = os.getenv(name)
     if raw is None:
@@ -73,7 +83,11 @@ class Config:
     upload_chunk_workers: int
     max_concurrent_tasks: int
 
+    owner_id: int = 0
+    admin_ids: frozenset[int] = field(default_factory=frozenset)
     allowed_user_ids: frozenset[int] = field(default_factory=frozenset)
+    # Users authorized at runtime via /users add (not persisted across restarts).
+    extra_allowed_ids: set[int] = field(default_factory=set)
 
     @classmethod
     def from_env(cls) -> "Config":
@@ -89,10 +103,10 @@ class Config:
             aria2_host = f"http://{aria2_host}"
         rpc_url = f"{aria2_host.rstrip('/')}:{aria2_port}/jsonrpc"
 
-        allowed_raw = os.getenv("ALLOWED_USER_IDS", "").strip()
-        allowed_ids = frozenset(
-            int(tok) for tok in allowed_raw.replace(",", " ").split() if tok.strip().lstrip("-").isdigit()
-        )
+        allowed_raw = os.getenv("ALLOWED_USER_IDS") or os.getenv("ALLOWED_USERS") or ""
+        allowed_ids = _parse_ids(allowed_raw)
+        admin_ids = _parse_ids(os.getenv("ADMINS") or os.getenv("ADMIN_IDS") or "")
+        owner_id = _get_int("OWNER_ID", 0)
 
         return cls(
             api_id=_get_int("TELEGRAM_API_ID", 0),
@@ -109,6 +123,8 @@ class Config:
             progress_update_interval=float(os.getenv("PROGRESS_INTERVAL", "5")),
             upload_chunk_workers=_get_int("UPLOAD_WORKERS", 4),
             max_concurrent_tasks=_get_int("MAX_CONCURRENT_TASKS", 3),
+            owner_id=owner_id,
+            admin_ids=admin_ids,
             allowed_user_ids=allowed_ids,
         )
 
@@ -124,10 +140,24 @@ class Config:
             problems.append("BOT_TOKEN is missing.")
         return problems
 
+    def is_owner(self, user_id: Optional[int]) -> bool:
+        return user_id is not None and self.owner_id != 0 and user_id == self.owner_id
+
+    def is_admin(self, user_id: Optional[int]) -> bool:
+        """Owners are implicitly admins."""
+
+        return self.is_owner(user_id) or (user_id is not None and user_id in self.admin_ids)
+
     def is_user_allowed(self, user_id: Optional[int]) -> bool:
-        if not self.allowed_user_ids:
+        # Owner/admins always pass. When no allow-list is configured the bot is
+        # open to everyone; otherwise the user must be on a list.
+        if self.is_admin(user_id):
             return True
-        return user_id is not None and user_id in self.allowed_user_ids
+        if not self.allowed_user_ids and not self.extra_allowed_ids:
+            return True
+        if user_id is None:
+            return False
+        return user_id in self.allowed_user_ids or user_id in self.extra_allowed_ids
 
     def ensure_dirs(self) -> None:
         self.work_dir.mkdir(parents=True, exist_ok=True)

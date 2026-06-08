@@ -64,6 +64,17 @@ def percent_of(done: float, total: float) -> float:
     return (done / total) * 100.0
 
 
+def _transfer_noun(stage: str) -> str:
+    """Pick the right past-tense noun for the byte counter line."""
+
+    low = stage.lower()
+    if "upload" in low:
+        return "Uploaded"
+    if "download" in low or "leech" in low:
+        return "Downloaded"
+    return "Processed"
+
+
 def render_progress(
     stage: str,
     *,
@@ -75,23 +86,29 @@ def render_progress(
 ) -> str:
     """Render a full progress card as a blockquote (the ``> Quote`` layout).
 
-    Rendered shape (sent as HTML so Telegram shows a native blockquote)::
+    Each statistic sits on its own quoted line for an easy-to-scan card
+    (sent as HTML so Telegram shows a native blockquote)::
 
         > 🔄 Downloading
-        > Speed: `12.4 MB/s` | ETA: `00:01:42`
-        > Processed: `450 MB / 900 MB`
-        > [■■■■■□□□□□] `50%`
+        > ⚡ Speed: `12.4 MB/s`
+        > ⏳ ETA: `00:01:42`
+        > 📦 Downloaded: `450 MB / 900 MB`
+        > 📊 Progress: `50%`
+        > [■■■■■□□□□□]
     """
 
     pct = percent_of(done, total) if total else 0.0
     lines = [
         md.bold(f"🔄 {md.escape(stage)}"),
-        f"Speed: {md.code(human_speed(speed))} | ETA: {md.code(human_eta(eta))}",
-        f"Processed: {md.code(f'{human_size(done)} / {human_size(total)}')}",
-        f"[{bar(pct)}] {md.code(f'{pct:.1f}%')}",
+        md.DIVIDER,
+        f"⚡ {md.label('Speed', md.code(human_speed(speed)))}",
+        f"⏳ {md.label('ETA', md.code(human_eta(eta)))}",
+        f"📦 {md.label(_transfer_noun(stage), md.code(f'{human_size(done)} / {human_size(total)}'))}",
+        f"📊 {md.label('Progress', md.code(f'{pct:.1f}%'))}",
+        f"<code>[{bar(pct)}]</code>",
     ]
     if extra:
-        lines.append(md.escape(extra))
+        lines.append(f"📝 {md.italic(md.escape(extra))}")
     return md.quote_block(lines)
 
 
@@ -99,16 +116,29 @@ def render_status(title: str, lines: Optional[list[str]] = None, *, emoji: str =
     """Render a generic status card (no progress bar) as a blockquote."""
 
     body = [md.bold(f"{emoji} {md.escape(title)}")]
-    for line in lines or []:
-        body.append(md.escape(line))
+    rest = list(lines or [])
+    if rest:
+        body.append(md.DIVIDER)
+        body.extend(md.escape(line) for line in rest)
     return md.quote_block(body)
 
 
-def render_error(message: str, detail: Optional[str] = None) -> str:
-    """Render an error card."""
+def render_log_card(title: str, body: str) -> str:
+    """Render recent log lines inside an expandable monospace blockquote."""
 
-    lines = [md.bold(f"❌ {md.escape('Error')}"), md.escape(message)]
+    lines = [md.bold(f"📜 {md.escape(title)}"), md.DIVIDER, md.code(body or "(empty)")]
+    return md.quote_block(lines, expandable=True)
+
+
+def render_error(message: str, detail: Optional[str] = None) -> str:
+    """Render an error card.
+
+    The detail is shown in full inside an expandable blockquote (monospace) so
+    multi-line ffmpeg/aria2 diagnostics stay readable without flooding chat.
+    """
+
+    lines = [md.bold(f"❌ {md.escape('Error')}"), md.DIVIDER, md.escape(message)]
+    detail = (detail or "").strip()
     if detail:
-        snippet = detail.strip().splitlines()[-1] if detail.strip() else detail
-        lines.append(md.code(snippet[:200]))
-    return md.quote_block(lines)
+        lines.append(md.code(detail[:1500]))
+    return md.quote_block(lines, expandable=bool(detail))
