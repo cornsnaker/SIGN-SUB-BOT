@@ -9,6 +9,7 @@ purged whether the task succeeds, fails or is cancelled.
 from __future__ import annotations
 
 import asyncio
+import logging
 import shutil
 import time
 from pathlib import Path
@@ -23,13 +24,15 @@ from ..leech.aria2_client import Aria2Client
 from ..leech.daemon import Aria2Daemon
 from ..leech.engine import LeechEngine, LeechError
 from ..leech.nyaa import NyaaScraper
-from ..processing.pipeline import PipelineError, SubtitlePipeline
+from ..processing.pipeline import PipelineError, PipelineResult, SubtitlePipeline
 from ..ui import keyboards as kb
 from ..ui import progress as pg
 from ..upload.uploader import Uploader
 from .sources import SourceKind, SourceSpec
 from .status import StatusReporter
 from .task import AUDIO_AWAIT_FILE, Task, TaskState, new_token
+
+log = logging.getLogger(__name__)
 
 _VIDEO_EXTS = {".mkv", ".mp4", ".m4v", ".mov", ".webm", ".ts"}
 # Evict tasks the user created but never started after this long, and never
@@ -307,8 +310,8 @@ class TaskManager:
                 if task.cancelled:
                     raise asyncio.CancelledError()
                 await self._do_download(task, work_subdir)
-                produced = await self._do_process(task)
-                await self._do_upload(task, produced)
+                result = await self._do_process(task)
+                await self._do_upload(task, result)
 
             task.state = TaskState.DONE
             if reporter:
@@ -380,7 +383,7 @@ class TaskManager:
         if not files:
             raise LeechError("Download finished but produced no files.")
 
-    async def _do_process(self, task: Task) -> Path:
+    async def _do_process(self, task: Task) -> PipelineResult:
         task.state = TaskState.PROCESSING
         reporter = task.reporter
         target = self._pick_video(task.downloaded_files)
@@ -419,11 +422,12 @@ class TaskManager:
                 pg.render_status("Pipeline Done", done_lines, emoji="✅"),
                 force=True,
             )
-        return result.output_path
+        return result
 
-    async def _do_upload(self, task: Task, produced: Path) -> None:
+    async def _do_upload(self, task: Task, result: PipelineResult) -> None:
         task.state = TaskState.UPLOADING
         reporter = task.reporter
+        produced = result.output_path
 
         async def progress(done, total, speed):  # type: ignore[no-untyped-def]
             if reporter:
@@ -448,6 +452,43 @@ class TaskManager:
             progress_cb=progress,
             reply_to=task.trigger_message_id,
         )
+
+        # Also send the extracted subtitle scripts as .txt for confirmation.
+        await self._send_subtitle_txts(task, result)
+
+    async def _send_subtitle_txts(self, task: Task, result: PipelineResult) -> None:
+        """Upload the extracted signs/songs and full subtitle as ``.txt`` files.
+
+        These are confirmation artifacts; a failure here must never fail the
+        task (the main MKV is already delivered).
+        """
+
+        stem = result.output_path.stem
+        artifacts = [
+            (result.signs_sub_path, f"{stem}.signs.txt",
+             "Signs & Songs subtitle (extracted)"),
+            (result.full_sub_path, f"{stem}.fullsub.txt",
+             "Full English subtitle (source)"),
+        ]
+        for src, name, label in artifacts:
+            if src is None or not Path(src).is_file():
+                continue
+            txt_path = Path(src).with_name(name)
+            try:
+                shutil.copyfile(src, txt_path)
+            except OSError:
+                log.warning("Could not stage %s for upload", name, exc_info=True)
+                continue
+            task.produced_files.append(txt_path)
+            try:
+                await self._uploader.send_document(
+                    task.chat_id,
+                    txt_path,
+                    caption=pg.render_status(label, [name], emoji="🧾"),
+                    reply_to=task.trigger_message_id,
+                )
+            except Exception:
+                log.warning("Failed to upload %s", name, exc_info=True)
 
     async def _cleanup(self, task: Task) -> None:
         """Purge all on-disk assets for this task (always runs)."""

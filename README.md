@@ -21,9 +21,9 @@ Give it a direct link, magnet, `.torrent`, or a Nyaa.si search — it downloads 
 
 1. **Leech** the source with multi-connection `aria2c` (direct / magnet / torrent / Nyaa).
 2. **Probe** the MKV's streams as JSON and locate the primary **English ASS** subtitle.
-3. **Filter** that subtitle line-by-line, dropping every `Dialogue:` whose style is `default` or `song` — leaving only signs, typesetting and SFX.
+3. **Filter** that subtitle line-by-line, keeping only `Dialogue:` events whose text carries both an `\an7` alignment and a `\pos(...)` override (positioned signs / typesetting / songs) and dropping plain dialogue. The `[Script Info]` and `[V4+ Styles]` sections are preserved verbatim.
 4. **Remux** video + audio + English subtitles + the new **Signs & Songs** track (+ fonts/attachments), dropping all non-English subtitles and tagging the new track `language=eng` / `title=Signs & Songs`.
-5. **Upload** the result back to your chat, then wipe every temporary file.
+5. **Upload** the result back to your chat — plus the extracted **`.signs.txt`** and **`.fullsub.txt`** scripts for confirmation — then wipe every temporary file.
 
 ## 🚀 Features
 
@@ -37,6 +37,7 @@ Give it a direct link, magnet, `.torrent`, or a Nyaa.si search — it downloads 
 | 🔎 **Nyaa.si** | RSS-first scraper with HTML fallback — search by text or paste a `/view/` link. |
 | 🏷️ **Smart filenames** | Reads the real title from a `.torrent`'s `info.name`, percent-decoded URLs, and HTTP `Content-Disposition`. |
 | 🔒 **Write-locks** | Processing never touches a file that is still downloading. |
+| 🧾 **Subtitle confirmation** | Alongside the MKV, the bot sends the extracted **Signs & Songs** and the **full** English subtitle as `.txt` files so you can verify the extraction. |
 | 🧹 **Guaranteed cleanup** | Every task purges its buffers and loose `.ass` assets in a `finally` block. |
 
 ### 🎵 Add-Audio flow

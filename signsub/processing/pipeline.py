@@ -54,6 +54,9 @@ class PipelineResult:
     english_sub_count: int
     temp_files: list[Path]
     extra_audio_count: int = 0
+    # The extracted subtitle scripts, retained for confirmation uploads.
+    full_sub_path: Optional[Path] = None
+    signs_sub_path: Optional[Path] = None
 
 
 class PipelineError(RuntimeError):
@@ -188,8 +191,9 @@ class SubtitlePipeline:
         if not output.is_file():
             raise PipelineError("Remux completed but the output file is missing.")
 
-        _safe_unlink(temp_ass)
-        _safe_unlink(signs_ass)
+        # NB: keep ``temp_ass`` (full extracted sub) and ``signs_ass`` (filtered
+        # signs/songs) on disk so the bot can upload them as ``.txt`` for
+        # confirmation; the task's cleanup removes them afterwards.
         return PipelineResult(
             output_path=output,
             source_stream_index=source.index,
@@ -198,6 +202,8 @@ class SubtitlePipeline:
             english_sub_count=len(english_subs),
             temp_files=[temp_ass, signs_ass],
             extra_audio_count=len(valid_audios),
+            full_sub_path=temp_ass if temp_ass.is_file() else None,
+            signs_sub_path=signs_ass if signs_ass.is_file() else None,
         )
 
     async def _run_with_progress(
