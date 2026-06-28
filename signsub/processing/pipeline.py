@@ -165,25 +165,27 @@ class SubtitlePipeline:
         remux_cmd += [
             "-map", "1:s:0",                 # the new signs-only track
             "-map", "0:t?",                  # attachments / fonts (optional)
-            "-c", "copy",                    # copy video / original audio / subs
+            "-c", "copy",                    # stream-copy everything (no re-encode)
         ]
-        # Re-encode ONLY the appended external audio to AAC (48 kHz stereo).
-        # Video, original audio and subtitles are still stream-copied. An
-        # uploaded audio often has a different sample rate or carries
-        # encoder-delay / non-monotonic timestamps; stream-copying it makes
-        # playback drift and stutter ("lagging") and some codecs error out in
-        # the player. Re-encoding just that track regenerates clean, aligned
-        # timestamps at a standard rate so it plays smoothly and in sync.
-        for j in range(len(valid_audios)):
-            remux_cmd += [
-                f"-c:a:{j}", "aac",
-                f"-b:a:{j}", "192k",
-                f"-ar:a:{j}", "48000",
-                f"-ac:a:{j}", "2",
-            ]
         if valid_audios:
-            # Regenerate presentation timestamps to keep A/V in sync.
-            remux_cmd += ["-fflags", "+genpts"]
+            # Stream-copy the added audio (no re-encode), but fix the muxing so
+            # it doesn't drift/stutter ("lagging") during playback. Uploaded
+            # audio commonly starts at a non-zero/negative timestamp (encoder
+            # delay) or uses a different timebase than the video; copied as-is
+            # the player keeps re-syncing and the output appears to lag.
+            #   * +genpts          -> fill in missing presentation timestamps
+            #   * avoid_negative_ts make_zero -> rebase every stream to start at
+            #                          0 so audio and video share an origin
+            #   * max_interleave_delta 0 -> don't let the muxer stall trying to
+            #                          interleave streams of unequal duration
+            #   * muxpreload/muxdelay 0  -> no artificial start offset
+            remux_cmd[1:1] = ["-fflags", "+genpts"]
+            remux_cmd += [
+                "-avoid_negative_ts", "make_zero",
+                "-max_interleave_delta", "0",
+                "-muxpreload", "0",
+                "-muxdelay", "0",
+            ]
         # Tag the new signs subtitle track.
         remux_cmd += [
             f"-metadata:s:s:{new_track_sub_index}", "language=eng",
