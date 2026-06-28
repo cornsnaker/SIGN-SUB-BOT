@@ -165,8 +165,25 @@ class SubtitlePipeline:
         remux_cmd += [
             "-map", "1:s:0",                 # the new signs-only track
             "-map", "0:t?",                  # attachments / fonts (optional)
-            "-c", "copy",                    # stream-copy everything (no re-encode)
+            "-c", "copy",                    # copy video / original audio / subs
         ]
+        # Re-encode ONLY the appended external audio to AAC (48 kHz stereo).
+        # Video, original audio and subtitles are still stream-copied. An
+        # uploaded audio often has a different sample rate or carries
+        # encoder-delay / non-monotonic timestamps; stream-copying it makes
+        # playback drift and stutter ("lagging") and some codecs error out in
+        # the player. Re-encoding just that track regenerates clean, aligned
+        # timestamps at a standard rate so it plays smoothly and in sync.
+        for j in range(len(valid_audios)):
+            remux_cmd += [
+                f"-c:a:{j}", "aac",
+                f"-b:a:{j}", "192k",
+                f"-ar:a:{j}", "48000",
+                f"-ac:a:{j}", "2",
+            ]
+        if valid_audios:
+            # Regenerate presentation timestamps to keep A/V in sync.
+            remux_cmd += ["-fflags", "+genpts"]
         # Tag the new signs subtitle track.
         remux_cmd += [
             f"-metadata:s:s:{new_track_sub_index}", "language=eng",
