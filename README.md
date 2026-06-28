@@ -21,7 +21,7 @@ Give it a direct link, magnet, `.torrent`, or a Nyaa.si search — it downloads 
 
 1. **Leech** the source with multi-connection `aria2c` (direct / magnet / torrent / Nyaa).
 2. **Probe** the MKV's streams as JSON and locate the primary **English ASS** subtitle.
-3. **Filter** that subtitle line-by-line, keeping only `Dialogue:` events whose text carries both an `\an7` alignment and a `\pos(...)` override (positioned signs / typesetting / songs) and dropping plain dialogue. The `[Script Info]` and `[V4+ Styles]` sections are preserved verbatim.
+3. **Filter** that subtitle line-by-line, keeping only `Dialogue:` events positioned on screen via `\pos(...)` or `\move(...)` (signs / typesetting / song captions) and dropping plain dialogue. Works regardless of style names — preserves the `[Script Info]` and `[V4+ Styles]` sections verbatim.
 4. **Remux** video + audio + English subtitles + the new **Signs & Songs** track (+ fonts/attachments), dropping all non-English subtitles and tagging the new track `language=eng` / `title=Signs & Songs`.
 5. **Upload** the result back to your chat — plus the extracted **`.signs.txt`** and **`.fullsub.txt`** scripts for confirmation — then wipe every temporary file.
 
