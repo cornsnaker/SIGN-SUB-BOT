@@ -17,6 +17,7 @@ from typing import Optional
 
 import aiohttp
 from pyrogram import Client
+from pyrogram.enums import ParseMode
 
 from ..config import Config
 from ..leech import torrent_meta
@@ -468,6 +469,25 @@ class TaskManager:
         )
         task.upload_secs = time.monotonic() - upload_start
 
+        # Send the remux stats as its own message (not part of the caption).
+        stats = metadata.render_stats(
+            original_size=task.source_size,
+            output_size=produced.stat().st_size if produced.exists() else 0,
+            download_secs=task.download_secs,
+            process_secs=task.process_secs,
+            upload_secs=task.upload_secs,
+        )
+        if stats:
+            try:
+                await self._client.send_message(
+                    task.chat_id,
+                    stats,
+                    parse_mode=ParseMode.HTML,
+                    reply_to_message_id=task.trigger_message_id,
+                )
+            except Exception:  # noqa: BLE001 - stats are informational only
+                log.warning("Failed to send stats message", exc_info=True)
+
         # Also send the extracted subtitle scripts as .txt for confirmation.
         await self._send_subtitle_txts(task, result)
 
@@ -535,15 +555,6 @@ class TaskManager:
         caption = metadata.render_caption(
             meta, deco=self._cfg.caption_deco, link=self._cfg.caption_link
         )
-        stats = metadata.render_stats(
-            original_size=task.source_size,
-            output_size=produced.stat().st_size if produced.exists() else 0,
-            download_secs=task.download_secs,
-            process_secs=task.process_secs,
-            upload_secs=task.upload_secs,
-        )
-        if stats:
-            caption = f"{caption}\n{stats}"
         return caption, produced, thumb
 
     @staticmethod
