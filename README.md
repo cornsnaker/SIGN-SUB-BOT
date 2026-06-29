@@ -38,6 +38,9 @@ Give it a direct link, magnet, `.torrent`, or a Nyaa.si search — it downloads 
 | 🏷️ **Smart filenames** | Reads the real title from a `.torrent`'s `info.name`, percent-decoded URLs, and HTTP `Content-Disposition`. |
 | 🧠 **Auto-naming (AniList + anitopy)** | The finished file is parsed with [`anitopy`](https://github.com/igorcmoura/anitopy) and matched against the **AniList** GraphQL API for the canonical title + episode count, then renamed to `Title - S01E01 [HEVC] [1080p].mkv`. |
 | 📑 **MediaInfo caption** | The upload caption is a rich card (Title · Episode · Season · codec · CRC32) whose **Type** links to a full **MediaInfo** report published to [Telegraph](https://telegra.ph). `[END]` is flagged automatically on the last episode. |
+| 🏷️ **Audio/sub type tag** | The **Type** is computed from the output's audio + subtitle languages: `(Dual-Audio)`, `(Tri-Audio)`, `(Multi-Audio)[n]`, `(Multi-Subs)[n]`, `(Eng-sub)`, `(eng & jpn subs)`. |
+| 🖼️ **Cover thumbnail** | The AniList `coverImage` is downloaded and attached as the uploaded file's thumbnail. |
+| 📊 **Remux stats** | A second card shows Original/Output size, the size delta, and Downloaded/Processed/Uploaded timings. |
 | 🔒 **Write-locks** | Processing never touches a file that is still downloading. |
 | 🧾 **Subtitle confirmation** | Alongside the MKV, the bot sends the extracted **Signs & Songs** and the **full** English subtitle as `.txt` files so you can verify the extraction. |
 | 🧹 **Guaranteed cleanup** | Every task purges its buffers and loose `.ass` assets in a `finally` block. |
@@ -76,6 +79,18 @@ The finished upload arrives with a rich, auto-named caption:
 > 🌟: `[HEVC] [1080p]` `[WEB-DL]`
 > **◎ CRC32:** `[694A4FC0]`
 > 🔗 **@YourChannel**
+
+…followed by a stats card:
+
+> **📊 Stats**
+> ➖➖➖➖➖➖➖➖➖
+> **Original Size:** `900.00 MB`
+> **Output Size:** `880.00 MB`
+> **Size:** `97.8% of source`
+> ➖➖➖➖➖➖➖➖➖
+> **Downloaded in:** `1m 42s`
+> **Processed in:** `1m 3s`
+> **Uploaded in:** `1m 10s`
 
 ## 🧱 Architecture
 

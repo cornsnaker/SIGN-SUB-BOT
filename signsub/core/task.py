@@ -66,6 +66,12 @@ class Task:
     downloaded_files: list[Path] = field(default_factory=list)
     produced_files: list[Path] = field(default_factory=list)
 
+    # Per-stage timings + sizes, used to build the upload "stats" caption block.
+    source_size: int = 0
+    download_secs: Optional[float] = None
+    process_secs: Optional[float] = None
+    upload_secs: Optional[float] = None
+
     # Populated when a Nyaa search yields multiple choices.
     nyaa_choices: list = field(default_factory=list)
 

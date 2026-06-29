@@ -24,7 +24,7 @@ from ..leech.aria2_client import Aria2Client
 from ..leech.daemon import Aria2Daemon
 from ..leech.engine import LeechEngine, LeechError
 from ..leech.nyaa import NyaaScraper
-from ..processing import metadata
+from ..processing import ffprobe, metadata
 from ..processing.pipeline import PipelineError, PipelineResult, SubtitlePipeline
 from ..ui import keyboards as kb
 from ..ui import progress as pg
@@ -347,6 +347,7 @@ class TaskManager:
         task.state = TaskState.DOWNLOADING
         reporter = task.reporter
         work_subdir.mkdir(parents=True, exist_ok=True)
+        download_start = time.monotonic()
 
         async def progress(stage, done, total, speed, eta):  # type: ignore[no-untyped-def]
             if reporter:
@@ -383,13 +384,19 @@ class TaskManager:
         task.downloaded_files = files
         if not files:
             raise LeechError("Download finished but produced no files.")
+        task.download_secs = time.monotonic() - download_start
 
     async def _do_process(self, task: Task) -> PipelineResult:
         task.state = TaskState.PROCESSING
         reporter = task.reporter
+        process_start = time.monotonic()
         target = self._pick_video(task.downloaded_files)
         if target is None:
             raise PipelineError("No video file (.mkv/.mp4/...) found in the download.")
+        try:
+            task.source_size = target.stat().st_size
+        except OSError:
+            task.source_size = 0
 
         async def progress(stage, done, total):  # type: ignore[no-untyped-def]
             if reporter:
@@ -410,6 +417,7 @@ class TaskManager:
         result = await self._pipeline.process(
             target, progress_cb=progress, extra_audios=task.extra_audios
         )
+        task.process_secs = time.monotonic() - process_start
         task.produced_files.append(result.output_path)
         if reporter:
             done_lines = [
@@ -429,9 +437,9 @@ class TaskManager:
         task.state = TaskState.UPLOADING
         reporter = task.reporter
 
-        # Derive the canonical title / MediaInfo report / CRC32 for the caption,
-        # then (optionally) rename the file to a clean human name.
-        caption, produced = await self._build_caption(task, result)
+        # Derive the canonical title / MediaInfo report / CRC32 / thumbnail for
+        # the caption, then (optionally) rename the file to a clean human name.
+        caption, produced, thumb = await self._build_caption(task, result)
         result.output_path = produced
 
         async def progress(done, total, speed):  # type: ignore[no-untyped-def]
@@ -449,19 +457,25 @@ class TaskManager:
                 force=True,
             )
 
+        upload_start = time.monotonic()
         await self._uploader.send_document(
             task.chat_id,
             produced,
             caption=caption,
+            thumb=thumb,
             progress_cb=progress,
             reply_to=task.trigger_message_id,
         )
+        task.upload_secs = time.monotonic() - upload_start
 
         # Also send the extracted subtitle scripts as .txt for confirmation.
         await self._send_subtitle_txts(task, result)
 
-    async def _build_caption(self, task: Task, result: PipelineResult) -> tuple[str, Path]:
-        """Build the rich upload caption and (optionally) rename the output.
+    async def _build_caption(
+        self, task: Task, result: PipelineResult
+    ) -> tuple[str, Path, Optional[Path]]:
+        """Build the rich upload caption, optionally rename the output, and
+        fetch an AniList cover image to use as the upload thumbnail.
 
         Best-effort: any failure (AniList/Telegraph/parse) falls back to the
         previous simple status caption with the produced filename.
@@ -469,12 +483,25 @@ class TaskManager:
 
         produced = result.output_path
         source_name = result.source_name or produced.name
+
+        # Read the output's audio/subtitle languages to compute the type tag.
+        audio_langs: list[str] = []
+        sub_langs: list[str] = []
+        try:
+            info = await ffprobe.probe(produced, ffprobe_bin=self._cfg.ffprobe_bin)
+            audio_langs = [a.language or "und" for a in info.audios()]
+            sub_langs = [s.language or "und" for s in info.subtitles()]
+        except Exception:  # noqa: BLE001 - stream probe is best-effort
+            log.warning("Output probe for caption failed", exc_info=True)
+
         try:
             meta = await metadata.build_meta(
                 source_name=source_name,
                 output_path=produced,
                 video_codec=result.video_codec,
                 video_height=result.video_height,
+                audio_langs=audio_langs,
+                sub_langs=sub_langs,
                 anilist=self._cfg.anilist_enabled,
                 telegraph_author=self._cfg.telegraph_author,
             )
@@ -483,6 +510,7 @@ class TaskManager:
             return (
                 pg.render_status("Signs & Songs ready", [produced.name], emoji="📦"),
                 produced,
+                None,
             )
 
         if self._cfg.auto_rename:
@@ -496,10 +524,27 @@ class TaskManager:
                 except OSError:
                     log.warning("Could not rename %s -> %s", produced.name, new_name, exc_info=True)
 
+        # Best-effort thumbnail from the AniList cover image.
+        thumb: Optional[Path] = None
+        if meta.cover_url:
+            dest = produced.with_name(f".thumb_{task.token}.jpg")
+            thumb = await metadata.download_cover(meta.cover_url, dest)
+            if thumb:
+                task.produced_files.append(thumb)
+
         caption = metadata.render_caption(
             meta, deco=self._cfg.caption_deco, link=self._cfg.caption_link
         )
-        return caption, produced
+        stats = metadata.render_stats(
+            original_size=task.source_size,
+            output_size=produced.stat().st_size if produced.exists() else 0,
+            download_secs=task.download_secs,
+            process_secs=task.process_secs,
+            upload_secs=task.upload_secs,
+        )
+        if stats:
+            caption = f"{caption}\n{stats}"
+        return caption, produced, thumb
 
     @staticmethod
     def _retarget_produced(task: Task, old: Path, new: Path) -> None:

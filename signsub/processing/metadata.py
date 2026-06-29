@@ -39,7 +39,7 @@ log = logging.getLogger(__name__)
 
 ANILIST_URL = "https://graphql.anilist.co"
 
-# A trimmed AniList query: just what the caption needs.
+# A trimmed AniList query: just what the caption / thumbnail need.
 _ANILIST_QUERY = """
 query ($search: String, $type: MediaType) {
   Media(search: $search, type: $type) {
@@ -49,6 +49,7 @@ query ($search: String, $type: MediaType) {
     episodes
     season
     seasonYear
+    coverImage { extraLarge large }
   }
 }
 """
@@ -71,11 +72,46 @@ class MediaMeta:
     season: Optional[str] = None
     episode_title: Optional[str] = None
     source: Optional[str] = None  # WEB-DL / BD / TV ...
-    sub_type: str = "Eng-Sub"
+    sub_type: str = "Eng-Sub"  # computed audio/sub tag, e.g. "(Dual-Audio)(Eng-sub)"
     codec: str = ""  # e.g. "[HEVC] [1080p]"
     crc32: Optional[str] = None
     mediainfo_url: Optional[str] = None
+    cover_url: Optional[str] = None  # AniList cover image, used as the thumbnail
     is_end: bool = False
+
+
+def type_tag(audio_langs: list[str], sub_langs: list[str]) -> str:
+    """Build the audio/subtitle "type" descriptor, mirroring Enc's get_file_tag.
+
+    Examples: ``(Dual-Audio)``, ``(Tri-Audio)``, ``(Multi-Audio)[5]``,
+    ``(Multi-Subs)[4]``, ``(Eng-sub)``, ``(eng & jpn subs)``.
+    """
+
+    out = ""
+    audios = [a for a in audio_langs if a]
+    subs = [s for s in sub_langs if s]
+
+    n_audio = len(audios)
+    if n_audio > 3:
+        out += f"(Multi-Audio)[{n_audio}]"
+    elif n_audio == 3:
+        out += "(Tri-Audio)"
+    elif n_audio == 2 and audios[0] != audios[1]:
+        out += "(Dual-Audio)"
+
+    n_sub = len(subs)
+    if n_sub > 2:
+        out += f"(Multi-Subs)[{n_sub}]"
+    elif n_sub == 2:
+        out += (
+            f"({subs[0]} & {subs[1]} subs)"
+            if subs[0] != subs[1]
+            else f"({subs[0].title()}-subs)"
+        )
+    elif n_sub == 1:
+        out += f"({subs[0].title()}-sub)"
+
+    return out or "Eng-Sub"
 
 
 def parse_filename(name: str) -> dict:
@@ -194,6 +230,8 @@ async def build_meta(
     output_path: Path,
     video_codec: Optional[str],
     video_height: Optional[int],
+    audio_langs: Optional[list[str]] = None,
+    sub_langs: Optional[list[str]] = None,
     anilist: bool = True,
     telegraph_author: str = "SignSub",
 ) -> MediaMeta:
@@ -213,6 +251,7 @@ async def build_meta(
 
     title = string.capwords(str(raw_title))
     total_episodes: Optional[str] = None
+    cover_url: Optional[str] = None
     if anilist:
         media = await _anilist_lookup(str(raw_title), season)
         names = media.get("title") or {}
@@ -221,6 +260,8 @@ async def build_meta(
             title = str(canonical)
         if media.get("episodes"):
             total_episodes = str(media["episodes"])
+        cover = media.get("coverImage") or {}
+        cover_url = cover.get("extraLarge") or cover.get("large")
 
     is_end = bool(
         episode and total_episodes and str(episode).lstrip("0") == total_episodes
@@ -238,9 +279,11 @@ async def build_meta(
         season=season,
         episode_title=episode_title,
         source=str(source) if source else None,
+        sub_type=type_tag(audio_langs or [], sub_langs or []),
         codec=codec_tag(video_codec, video_height),
         crc32=crc_value,
         mediainfo_url=mi_value,
+        cover_url=cover_url,
         is_end=is_end,
     )
 
@@ -251,23 +294,68 @@ _FS_UNSAFE = re.compile(r'[\\/:*?"<>|]+')
 def clean_filename(meta: MediaMeta, fallback_stem: str, suffix: str = ".mkv") -> str:
     """Build a clean output filename from parsed metadata.
 
-    e.g. ``Yowayowa Sensei - S02E04 [HEVC] [1080p].mkv``. Falls back to the
-    original stem when there isn't enough metadata to improve on it.
+    e.g. ``Yowayowa Sensei S02 - 04 [END] (Dual-Audio) [HEVC] [1080p] [WEB-DL].mkv``
+    (mirrors Enc's ``parse``). Falls back to the original stem when there isn't
+    enough metadata to improve on it.
     """
 
     if not meta.episode:
         base = meta.title or fallback_stem
         return _FS_UNSAFE.sub("", base).strip() + suffix
 
-    season = meta.season or "1"
-    try:
-        tag = f"S{int(season):02d}E{int(meta.episode):02d}"
-    except (TypeError, ValueError):
-        tag = f"E{meta.episode}"
-    name = f"{meta.title} - {tag}"
+    name = meta.title
+    if meta.season:
+        name += f" S{meta.season}"
+    name += f" - {meta.episode}"
+    if meta.version:
+        name += f"v{meta.version}"
+    if meta.is_end:
+        name += " [END]"
+    if meta.sub_type and meta.sub_type != "Eng-Sub":
+        name += f" {meta.sub_type}"
     if meta.codec:
         name += f" {meta.codec}"
+    if meta.source:
+        name += f" [{meta.source}]"
     return _FS_UNSAFE.sub("", name).strip() + suffix
+
+
+async def download_cover(url: str, dest: Path) -> Optional[Path]:
+    """Download the AniList cover image to ``dest`` for use as a thumbnail."""
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            resp = await session.get(url, timeout=aiohttp.ClientTimeout(total=20))
+            if resp.status != 200:
+                return None
+            data = await resp.read()
+        dest.write_bytes(data)
+        return dest
+    except Exception:  # noqa: BLE001 - thumbnail is purely cosmetic
+        log.warning("Cover download failed for %s", url, exc_info=True)
+        return None
+
+
+def _human_size(num_bytes: float) -> str:
+    value = float(num_bytes or 0)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if value < 1024.0:
+            return f"{int(value)} {unit}" if unit == "B" else f"{value:.2f} {unit}"
+        value /= 1024.0
+    return f"{value:.2f} PB"
+
+
+def _human_secs(seconds: Optional[float]) -> Optional[str]:
+    if seconds is None or seconds < 0:
+        return None
+    seconds = int(seconds)
+    h, rem = divmod(seconds, 3600)
+    m, s = divmod(rem, 60)
+    if h:
+        return f"{h}h {m}m {s}s"
+    if m:
+        return f"{m}m {s}s"
+    return f"{s}s"
 
 
 def render_caption(meta: MediaMeta, *, deco: str = "◎", link: str = "") -> str:
@@ -320,3 +408,44 @@ def render_caption(meta: MediaMeta, *, deco: str = "◎", link: str = "") -> str
         lines.append(f"🔗 {md.bold(md.escape(link))}")
 
     return md.quote_block(lines)
+
+
+def render_stats(
+    *,
+    original_size: int = 0,
+    output_size: int = 0,
+    download_secs: Optional[float] = None,
+    process_secs: Optional[float] = None,
+    upload_secs: Optional[float] = None,
+) -> Optional[str]:
+    """Render an optional remux-stats card (the remux analogue of Enc's
+    "Encode Stats"): sizes, the size delta, and per-stage timings.
+
+    Returns ``None`` when there's nothing meaningful to show.
+    """
+
+    lines: list[str] = []
+    if original_size and output_size:
+        delta = (output_size / original_size) * 100.0
+        lines.append(md.label("Original Size", md.code(_human_size(original_size))))
+        lines.append(md.label("Output Size", md.code(_human_size(output_size))))
+        lines.append(md.label("Size", md.code(f"{delta:.1f}% of source")))
+    elif output_size:
+        lines.append(md.label("Output Size", md.code(_human_size(output_size))))
+
+    timings = [
+        ("Downloaded in", _human_secs(download_secs)),
+        ("Processed in", _human_secs(process_secs)),
+        ("Uploaded in", _human_secs(upload_secs)),
+    ]
+    timing_lines = [md.label(label, md.code(value)) for label, value in timings if value]
+
+    if not lines and not timing_lines:
+        return None
+
+    body = [md.bold("📊 Stats"), md.DIVIDER, *lines]
+    if timing_lines:
+        if lines:
+            body.append(md.DIVIDER)
+        body.extend(timing_lines)
+    return md.quote_block(body)
