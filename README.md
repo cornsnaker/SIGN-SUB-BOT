@@ -36,6 +36,8 @@ Give it a direct link, magnet, `.torrent`, or a Nyaa.si search — it downloads 
 | ⚡ **aria2c core** | Async JSON-RPC client + auto-spawned daemon; magnet→metadata→torrent hand-off handled for you. |
 | 🔎 **Nyaa.si** | RSS-first scraper with HTML fallback — search by text or paste a `/view/` link. |
 | 🏷️ **Smart filenames** | Reads the real title from a `.torrent`'s `info.name`, percent-decoded URLs, and HTTP `Content-Disposition`. |
+| 🧠 **Auto-naming (AniList + anitopy)** | The finished file is parsed with [`anitopy`](https://github.com/igorcmoura/anitopy) and matched against the **AniList** GraphQL API for the canonical title + episode count, then renamed to `Title - S01E01 [HEVC] [1080p].mkv`. |
+| 📑 **MediaInfo caption** | The upload caption is a rich card (Title · Episode · Season · codec · CRC32) whose **Type** links to a full **MediaInfo** report published to [Telegraph](https://telegra.ph). `[END]` is flagged automatically on the last episode. |
 | 🔒 **Write-locks** | Processing never touches a file that is still downloading. |
 | 🧾 **Subtitle confirmation** | Alongside the MKV, the bot sends the extracted **Signs & Songs** and the **full** English subtitle as `.txt` files so you can verify the extraction. |
 | 🧹 **Guaranteed cleanup** | Every task purges its buffers and loose `.ass` assets in a `finally` block. |
@@ -65,6 +67,16 @@ Give it a direct link, magnet, `.torrent`, or a Nyaa.si search — it downloads 
 > 📦 Yowayowa.Sensei.S01E01.mkv
 > Choose an action:
 
+The finished upload arrives with a rich, auto-named caption:
+
+> **◎ Title:** `Yowayowa Sensei`
+> **◎ Episode:** `04`
+> **◎ Season:** `2`
+> **◎ Type:** [Eng-Sub](https://telegra.ph) **[END]**
+> 🌟: `[HEVC] [1080p]` `[WEB-DL]`
+> **◎ CRC32:** `[694A4FC0]`
+> 🔗 **@YourChannel**
+
 ## 🧱 Architecture
 
 ```
@@ -87,6 +99,7 @@ signsub/
 │   └── torrent_meta.py    # bencode/URL/Content-Disposition filename detection
 ├── processing/
 │   ├── ffprobe.py         # JSON stream introspection
+│   ├── metadata.py        # anitopy + AniList auto-naming, CRC32, MediaInfo caption
 │   └── pipeline.py        # the subtitle automation pipeline
 ├── ui/
 │   ├── fmt.py             # HTML blockquote/bold/code primitives
@@ -102,10 +115,11 @@ signsub/
 
 ## ⚙️ Setup
 
-**Requirements:** Python 3.10+, plus `ffmpeg`/`ffprobe` and `aria2` on `PATH`.
+**Requirements:** Python 3.10+, plus `ffmpeg`/`ffprobe`, `aria2` and `mediainfo`
+on `PATH` (`mediainfo` powers the rich upload caption).
 
 ```bash
-sudo apt-get install -y ffmpeg aria2
+sudo apt-get install -y ffmpeg aria2 mediainfo
 pip install -r requirements.txt
 ```
 
@@ -125,6 +139,11 @@ cp .env.example .env       # then edit the three values below
 | `OWNER_ID` | | Owner's Telegram user ID — full control, incl. `/users add\|remove` |
 | `ADMINS` | | Comma/space-separated admin IDs — may use `/stats`, `/tasks`, `/users` |
 | `ALLOWED_USERS` | | User IDs allowed to use the bot (default: everyone; owner/admins always allowed) |
+| `ANILIST_ENABLED` | | Look up canonical titles on AniList (default `1`) |
+| `AUTO_RENAME` | | Rename the finished file to a clean title (default `1`) |
+| `CAPTION_DECO` | | Label decorator in the caption (default `◎`) |
+| `CAPTION_LINK` | | Footer handle/link shown as `🔗 <value>` (e.g. your channel) |
+| `TELEGRAPH_AUTHOR` | | Author shown on the published MediaInfo page (default `SignSub`) |
 | `MAX_CONCURRENT_TASKS` | | Max simultaneous tasks (default `3`) |
 
 ## ▶️ Run

@@ -27,6 +27,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ffmpeg \
         aria2 \
+        mediainfo \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 

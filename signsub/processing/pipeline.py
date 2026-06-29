@@ -59,6 +59,10 @@ class PipelineResult:
     # The extracted subtitle scripts, retained for confirmation uploads.
     full_sub_path: Optional[Path] = None
     signs_sub_path: Optional[Path] = None
+    # Source filename + video stream info, used to build the upload caption.
+    source_name: str = ""
+    video_codec: Optional[str] = None
+    video_height: Optional[int] = None
 
 
 class PipelineError(RuntimeError):
@@ -212,6 +216,8 @@ class SubtitlePipeline:
         if not output.is_file():
             raise PipelineError("Remux completed but the output file is missing.")
 
+        video = info.first_video()
+
         # NB: keep ``temp_ass`` (full extracted sub) and ``signs_ass`` (filtered
         # signs/songs) on disk so the bot can upload them as ``.txt`` for
         # confirmation; the task's cleanup removes them afterwards.
@@ -225,6 +231,9 @@ class SubtitlePipeline:
             extra_audio_count=len(valid_audios),
             full_sub_path=temp_ass if temp_ass.is_file() else None,
             signs_sub_path=signs_ass if signs_ass.is_file() else None,
+            source_name=mkv_path.name,
+            video_codec=video.codec_name if video else None,
+            video_height=video.height if video else None,
         )
 
     async def _run_with_progress(

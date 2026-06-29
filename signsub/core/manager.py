@@ -24,6 +24,7 @@ from ..leech.aria2_client import Aria2Client
 from ..leech.daemon import Aria2Daemon
 from ..leech.engine import LeechEngine, LeechError
 from ..leech.nyaa import NyaaScraper
+from ..processing import metadata
 from ..processing.pipeline import PipelineError, PipelineResult, SubtitlePipeline
 from ..ui import keyboards as kb
 from ..ui import progress as pg
@@ -427,7 +428,11 @@ class TaskManager:
     async def _do_upload(self, task: Task, result: PipelineResult) -> None:
         task.state = TaskState.UPLOADING
         reporter = task.reporter
-        produced = result.output_path
+
+        # Derive the canonical title / MediaInfo report / CRC32 for the caption,
+        # then (optionally) rename the file to a clean human name.
+        caption, produced = await self._build_caption(task, result)
+        result.output_path = produced
 
         async def progress(done, total, speed):  # type: ignore[no-untyped-def]
             if reporter:
@@ -444,7 +449,6 @@ class TaskManager:
                 force=True,
             )
 
-        caption = pg.render_status("Signs & Songs ready", [produced.name], emoji="📦")
         await self._uploader.send_document(
             task.chat_id,
             produced,
@@ -455,6 +459,55 @@ class TaskManager:
 
         # Also send the extracted subtitle scripts as .txt for confirmation.
         await self._send_subtitle_txts(task, result)
+
+    async def _build_caption(self, task: Task, result: PipelineResult) -> tuple[str, Path]:
+        """Build the rich upload caption and (optionally) rename the output.
+
+        Best-effort: any failure (AniList/Telegraph/parse) falls back to the
+        previous simple status caption with the produced filename.
+        """
+
+        produced = result.output_path
+        source_name = result.source_name or produced.name
+        try:
+            meta = await metadata.build_meta(
+                source_name=source_name,
+                output_path=produced,
+                video_codec=result.video_codec,
+                video_height=result.video_height,
+                anilist=self._cfg.anilist_enabled,
+                telegraph_author=self._cfg.telegraph_author,
+            )
+        except Exception:  # noqa: BLE001 - never fail the upload on metadata
+            log.warning("Caption metadata build failed", exc_info=True)
+            return (
+                pg.render_status("Signs & Songs ready", [produced.name], emoji="📦"),
+                produced,
+            )
+
+        if self._cfg.auto_rename:
+            new_name = metadata.clean_filename(meta, produced.stem, produced.suffix)
+            if new_name and new_name != produced.name:
+                target = produced.with_name(new_name)
+                try:
+                    produced.rename(target)
+                    self._retarget_produced(task, produced, target)
+                    produced = target
+                except OSError:
+                    log.warning("Could not rename %s -> %s", produced.name, new_name, exc_info=True)
+
+        caption = metadata.render_caption(
+            meta, deco=self._cfg.caption_deco, link=self._cfg.caption_link
+        )
+        return caption, produced
+
+    @staticmethod
+    def _retarget_produced(task: Task, old: Path, new: Path) -> None:
+        """Keep the task's produced-files list in sync after a rename."""
+
+        task.produced_files = [new if p == old else p for p in task.produced_files]
+        if new not in task.produced_files:
+            task.produced_files.append(new)
 
     async def _send_subtitle_txts(self, task: Task, result: PipelineResult) -> None:
         """Upload the extracted signs/songs and full subtitle as ``.txt`` files.

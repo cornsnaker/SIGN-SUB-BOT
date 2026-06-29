@@ -83,6 +83,13 @@ class Config:
     upload_chunk_workers: int
     max_concurrent_tasks: int
 
+    # Auto-naming / rich caption (AniList + anitopy + MediaInfo).
+    anilist_enabled: bool = True
+    auto_rename: bool = True
+    caption_deco: str = "◎"
+    caption_link: str = ""
+    telegraph_author: str = "SignSub"
+
     owner_id: int = 0
     admin_ids: frozenset[int] = field(default_factory=frozenset)
     allowed_user_ids: frozenset[int] = field(default_factory=frozenset)
@@ -123,6 +130,11 @@ class Config:
             progress_update_interval=float(os.getenv("PROGRESS_INTERVAL", "5")),
             upload_chunk_workers=_get_int("UPLOAD_WORKERS", 4),
             max_concurrent_tasks=_get_int("MAX_CONCURRENT_TASKS", 3),
+            anilist_enabled=_get_bool("ANILIST_ENABLED", True),
+            auto_rename=_get_bool("AUTO_RENAME", True),
+            caption_deco=os.getenv("CAPTION_DECO", "◎"),
+            caption_link=os.getenv("CAPTION_LINK", ""),
+            telegraph_author=os.getenv("TELEGRAPH_AUTHOR", "SignSub"),
             owner_id=owner_id,
             admin_ids=admin_ids,
             allowed_user_ids=allowed_ids,

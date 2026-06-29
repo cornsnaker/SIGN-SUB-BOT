@@ -50,6 +50,12 @@ def italic(text: str) -> str:
     return f"<i>{text}</i>"
 
 
+def link(text: str, url: str) -> str:
+    """A hyperlink ``<a href="url">text</a>`` (both arguments are escaped)."""
+
+    return f'<a href="{escape(url)}">{escape(text)}</a>'
+
+
 # A thin rule used to separate a card's header from its body.
 DIVIDER = "➖➖➖➖➖➖➖➖➖"
 
