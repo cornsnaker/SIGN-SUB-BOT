@@ -73,11 +73,33 @@ class MediaMeta:
     episode_title: Optional[str] = None
     source: Optional[str] = None  # WEB-DL / BD / TV ...
     sub_type: str = "Eng-Sub"  # computed audio/sub tag, e.g. "(Dual-Audio)(Eng-sub)"
+    audio_tag: str = ""  # short filename tag, e.g. "Tri" / "Dual" / "Jpn"
     codec: str = ""  # e.g. "[HEVC] [1080p]"
     crc32: Optional[str] = None
     mediainfo_url: Optional[str] = None
     cover_url: Optional[str] = None  # AniList cover image, used as the thumbnail
     is_end: bool = False
+
+
+def audio_short_tag(audio_langs: list[str]) -> str:
+    """Short audio tag for the filename, mirroring Enc's get_file_tag.
+
+    Examples: ``MULTi`` (>3), ``Tri`` (3), ``Dual`` (2 distinct langs), or the
+    single language capitalized (e.g. ``Jpn``, ``Eng``). Returns ``""`` when the
+    only language is undetermined.
+    """
+
+    audios = [a for a in audio_langs if a and a.lower() != "und"]
+    n_audio = len(audios)
+    if n_audio > 3:
+        return "MULTi"
+    if n_audio == 3:
+        return "Tri"
+    if n_audio == 2:
+        return "Dual" if audios[0] != audios[1] else audios[0].title()
+    if n_audio == 1:
+        return audios[0].title()
+    return ""
 
 
 def type_tag(audio_langs: list[str], sub_langs: list[str]) -> str:
@@ -280,6 +302,7 @@ async def build_meta(
         episode_title=episode_title,
         source=str(source) if source else None,
         sub_type=type_tag(audio_langs or [], sub_langs or []),
+        audio_tag=audio_short_tag(audio_langs or []),
         codec=codec_tag(video_codec, video_height),
         crc32=crc_value,
         mediainfo_url=mi_value,
@@ -291,19 +314,28 @@ async def build_meta(
 _FS_UNSAFE = re.compile(r'[\\/:*?"<>|]+')
 
 
-def clean_filename(meta: MediaMeta, fallback_stem: str, suffix: str = ".mkv") -> str:
-    """Build a clean output filename from parsed metadata.
+def clean_filename(
+    meta: MediaMeta,
+    fallback_stem: str,
+    suffix: str = ".mkv",
+    *,
+    release_name: str = "",
+) -> str:
+    """Build a clean output filename from parsed metadata, mirroring Enc.
 
-    e.g. ``Yowayowa Sensei S02 - 04 [END] (Dual-Audio) [HEVC] [1080p] [WEB-DL].mkv``
-    (mirrors Enc's ``parse``). Falls back to the original stem when there isn't
-    enough metadata to improve on it.
+    e.g. ``[CR] Yowayowa Sensei S2 - 04 [END] [Tri].mkv``. The optional
+    ``release_name`` (e.g. ``[CR]``) is prepended and the short audio tag
+    (``Tri``/``Dual``/``Jpn`` …) is appended in brackets. Falls back to the
+    original stem when there isn't enough metadata to improve on it.
     """
+
+    prefix = f"{release_name.strip()} " if release_name.strip() else ""
 
     if not meta.episode:
         base = meta.title or fallback_stem
-        return _FS_UNSAFE.sub("", base).strip() + suffix
+        return _FS_UNSAFE.sub("", prefix + base).strip() + suffix
 
-    name = meta.title
+    name = prefix + meta.title
     if meta.season:
         name += f" S{meta.season}"
     name += f" - {meta.episode}"
@@ -311,12 +343,8 @@ def clean_filename(meta: MediaMeta, fallback_stem: str, suffix: str = ".mkv") ->
         name += f"v{meta.version}"
     if meta.is_end:
         name += " [END]"
-    if meta.sub_type and meta.sub_type != "Eng-Sub":
-        name += f" {meta.sub_type}"
-    if meta.codec:
-        name += f" {meta.codec}"
-    if meta.source:
-        name += f" [{meta.source}]"
+    if meta.audio_tag:
+        name += f" [{meta.audio_tag}]"
     return _FS_UNSAFE.sub("", name).strip() + suffix
 
 

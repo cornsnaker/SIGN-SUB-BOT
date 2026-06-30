@@ -36,7 +36,7 @@ Give it a direct link, magnet, `.torrent`, or a Nyaa.si search — it downloads 
 | ⚡ **aria2c core** | Async JSON-RPC client + auto-spawned daemon; magnet→metadata→torrent hand-off handled for you. |
 | 🔎 **Nyaa.si** | RSS-first scraper with HTML fallback — search by text or paste a `/view/` link. |
 | 🏷️ **Smart filenames** | Reads the real title from a `.torrent`'s `info.name`, percent-decoded URLs, and HTTP `Content-Disposition`. |
-| 🧠 **Auto-naming (AniList + anitopy)** | The finished file is parsed with [`anitopy`](https://github.com/igorcmoura/anitopy) and matched against the **AniList** GraphQL API for the canonical title + episode count, then renamed to `Title - S01E01 [HEVC] [1080p].mkv`. |
+| 🧠 **Auto-naming (AniList + anitopy)** | The finished file is parsed with [`anitopy`](https://github.com/igorcmoura/anitopy) and matched against the **AniList** GraphQL API for the canonical title + episode count, then renamed to `[CR] Title S2 - 01 [Tri].mkv` (release tag from `RELEASE_NAME` + short audio tag). |
 | 📑 **MediaInfo caption** | The upload caption is a rich card (Title · Episode · Season · codec · CRC32) whose **Type** links to a full **MediaInfo** report published to [Telegraph](https://telegra.ph). `[END]` is flagged automatically on the last episode. |
 | 🏷️ **Audio/sub type tag** | The **Type** is computed from the output's audio + subtitle languages: `(Dual-Audio)`, `(Tri-Audio)`, `(Multi-Audio)[n]`, `(Multi-Subs)[n]`, `(Eng-sub)`, `(eng & jpn subs)`. |
 | 🖼️ **Cover thumbnail** | The AniList `coverImage` is downloaded and attached as the uploaded file's thumbnail. |
@@ -159,6 +159,7 @@ cp .env.example .env       # then edit the three values below
 | `CAPTION_DECO` | | Label decorator in the caption (default `◎`) |
 | `CAPTION_LINK` | | Footer handle/link shown as `🔗 <value>` (e.g. your channel) |
 | `TELEGRAPH_AUTHOR` | | Author shown on the published MediaInfo page (default `SignSub`) |
+| `RELEASE_NAME` | | Release tag prepended to filenames, e.g. `[CR]`; runtime-editable via `/settag` |
 | `MAX_CONCURRENT_TASKS` | | Max simultaneous tasks (default `3`) |
 
 ## ▶️ Run
@@ -192,6 +193,9 @@ always allowed regardless of the allow-list.
 | `/logs [n]` | admin/owner | Tail the last `n` (default 30, max 100) in-memory log lines |
 | `/users` | admin/owner | List owner/admins/allow-list and seen users |
 | `/users add <id>` · `/users remove <id>` | owner | Authorize / revoke a user at runtime (not persisted across restarts) |
+| `/authorize <id>` (`/auth`) · `/unauthorize <id>` (`/unauth`) | admin/owner | Authorize / revoke a user at runtime |
+| `/settag [CR]` (`/releaser`) | admin/owner | Set (or clear with `none`) the release tag prepended to output filenames |
+| `/gitpull` (`/update`) | admin/owner | `git pull --ff-only` the bot's repo and report the result |
 
 ## 🐳 Docker
 

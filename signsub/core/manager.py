@@ -534,7 +534,9 @@ class TaskManager:
             )
 
         if self._cfg.auto_rename:
-            new_name = metadata.clean_filename(meta, produced.stem, produced.suffix)
+            new_name = metadata.clean_filename(
+                meta, produced.stem, produced.suffix, release_name=self._cfg.release_name
+            )
             if new_name and new_name != produced.name:
                 target = produced.with_name(new_name)
                 try:

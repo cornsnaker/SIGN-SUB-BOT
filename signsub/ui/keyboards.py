@@ -17,7 +17,12 @@ ACT_NYAA_PICK = "nya"
 ACT_ADD_AUDIO = "aud"
 ACT_AUDIO_LANG = "alng"
 ACT_AUDIO_NAME = "anm"
+ACT_BACK = "bk"
 ACT_NOOP = "noop"
+
+# Back-button destinations (see ACT_BACK handling in the router).
+BACK_TO_SOURCE = "src"
+BACK_TO_LANG = "lang"
 
 # Common audio languages offered as buttons (ISO 639-2 code, label).
 AUDIO_LANGUAGES: list[tuple[str, str]] = [
@@ -81,7 +86,12 @@ def audio_language_menu(token: str) -> InlineKeyboardMarkup:
             row = []
     if row:
         buttons.append(row)
-    buttons.append([InlineKeyboardButton("❌ Cancel", callback_data=f"{ACT_CANCEL}:{token}")])
+    buttons.append(
+        [
+            InlineKeyboardButton("⬅️ Back", callback_data=f"{ACT_BACK}:{token}:{BACK_TO_SOURCE}"),
+            InlineKeyboardButton("❌ Cancel", callback_data=f"{ACT_CANCEL}:{token}"),
+        ]
+    )
     return InlineKeyboardMarkup(buttons)
 
 
@@ -105,7 +115,12 @@ def audio_name_menu(token: str) -> InlineKeyboardMarkup:
             )
         ]
     )
-    buttons.append([InlineKeyboardButton("❌ Cancel", callback_data=f"{ACT_CANCEL}:{token}")])
+    buttons.append(
+        [
+            InlineKeyboardButton("⬅️ Back", callback_data=f"{ACT_BACK}:{token}:{BACK_TO_LANG}"),
+            InlineKeyboardButton("❌ Cancel", callback_data=f"{ACT_CANCEL}:{token}"),
+        ]
+    )
     return InlineKeyboardMarkup(buttons)
 
 

@@ -19,7 +19,7 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import CallbackQuery, Message
 
 from ..config import Config
-from ..core import logbuffer, sources
+from ..core import logbuffer, proc, sources
 from ..core.manager import TaskManager
 from ..core.status import StatusReporter
 from ..core.task import (
@@ -44,6 +44,9 @@ _START_CARD = pg.render_status(
     ],
     emoji="🎬",
 )
+
+# Repo root (signsub/handlers/router.py -> repo/), used by /gitpull.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 _ADD_AUDIO_PROMPT = pg.render_status(
     "Add External Audio",
@@ -118,6 +121,9 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
                 "• /stats — bot uptime and task counters",
                 "• /tasks — live list of active tasks",
                 "• /logs [n] — tail the last n log lines",
+                "• /authorize <id> | /unauthorize <id> — manage access",
+                "• /settag [CR] — set the release tag for filenames",
+                "• /gitpull — pull the latest bot code",
                 "• /users — list known users" + (" (add/remove)" if role == "owner" else ""),
             ]
         if role == "owner":
@@ -269,6 +275,94 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             pg.render_status("Users", lines, emoji="👥"),
             parse_mode=ParseMode.HTML,
         )
+
+    async def _set_authorized(message: Message, *, authorize: bool) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not config.is_admin(uid):
+            await _deny(message, admin=True)
+            return
+        parts = (message.text or "").split()
+        if len(parts) < 2 or not parts[1].lstrip("-").isdigit():
+            verb = "authorize" if authorize else "unauthorize"
+            await message.reply_text(
+                pg.render_error("Usage", f"/{verb} <user_id>"),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        target = int(parts[1])
+        if authorize:
+            config.extra_allowed_ids.add(target)
+            note = f"Authorized user {target}."
+        else:
+            config.extra_allowed_ids.discard(target)
+            note = f"Revoked access for user {target}."
+        await message.reply_text(
+            pg.render_status("Users Updated", [note], emoji="✅"),
+            parse_mode=ParseMode.HTML,
+        )
+
+    @client.on_message(filters.command(["authorize", "auth"]) & filters.private)
+    async def _on_authorize(_: Client, message: Message) -> None:
+        await _set_authorized(message, authorize=True)
+
+    @client.on_message(filters.command(["unauthorize", "unauth"]) & filters.private)
+    async def _on_unauthorize(_: Client, message: Message) -> None:
+        await _set_authorized(message, authorize=False)
+
+    @client.on_message(filters.command(["settag", "releaser"]) & filters.private)
+    async def _on_settag(_: Client, message: Message) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not config.is_admin(uid):
+            await _deny(message, admin=True)
+            return
+        parts = (message.text or "").split(maxsplit=1)
+        if len(parts) < 2 or not parts[1].strip():
+            current = config.release_name or "(none)"
+            await message.reply_text(
+                pg.render_status(
+                    "Release Tag",
+                    [f"Current tag: {current}",
+                     "Set it with: /settag [CR]",
+                     "Clear it with: /settag none"],
+                    emoji="🏷️",
+                ),
+                parse_mode=ParseMode.HTML,
+            )
+            return
+        value = parts[1].strip()
+        config.release_name = "" if value.lower() == "none" else value
+        shown = config.release_name or "(none)"
+        await message.reply_text(
+            pg.render_status("Release Tag Updated",
+                             [f"Output files will be prefixed with: {shown}"], emoji="🏷️"),
+            parse_mode=ParseMode.HTML,
+        )
+
+    @client.on_message(filters.command(["gitpull", "update"]) & filters.private)
+    async def _on_gitpull(_: Client, message: Message) -> None:
+        uid = message.from_user.id if message.from_user else None
+        if not config.is_admin(uid):
+            await _deny(message, admin=True)
+            return
+        status = await message.reply_text(
+            pg.render_status("Updating", ["Running git pull…"], emoji="🔄"),
+            parse_mode=ParseMode.HTML,
+        )
+        result = await proc.run(["git", "-C", str(_REPO_ROOT), "pull", "--ff-only"], timeout=120)
+        body = (result.stdout or "").strip() or (result.stderr or "").strip() or "(no output)"
+        if len(body) > 3000:
+            body = body[-3000:]
+        if result.ok:
+            await status.edit_text(
+                pg.render_log_card("git pull", body) + "\n"
+                + pg.render_status("Restart the bot to apply code changes.", emoji="ℹ️"),
+                parse_mode=ParseMode.HTML,
+            )
+        else:
+            await status.edit_text(
+                pg.render_error(f"git pull failed (rc={result.returncode})", body),
+                parse_mode=ParseMode.HTML,
+            )
 
     @client.on_message(filters.command(["leech", "l"]) & filters.private)
     async def _on_leech(_: Client, message: Message) -> None:
@@ -450,7 +544,9 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
         & filters.private
         & ~filters.command(
             ["start", "help", "stats", "tasks", "users", "logs",
-             "addaudio", "muxaudio", "leech", "l"]
+             "addaudio", "muxaudio", "leech", "l",
+             "authorize", "auth", "unauthorize", "unauth",
+             "settag", "releaser", "gitpull", "update"]
         )
     )
     async def _on_text(_: Client, message: Message) -> None:
@@ -588,6 +684,10 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             await _audio_pick_name(query, task, args)
             return
 
+        if action == kb.ACT_BACK:
+            await _audio_back(query, task, args)
+            return
+
         if action == kb.ACT_START:
             reporter = StatusReporter(client, query.message,
                                       min_interval=config.progress_update_interval)
@@ -709,6 +809,37 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
         lines.append("Add another audio, or Start Download.")
         await query.message.edit_text(
             pg.render_status("Audio Added", lines, emoji="🎶"),
+            parse_mode=ParseMode.HTML,
+            reply_markup=kb.source_menu(task.token, audio_count=len(task.extra_audios)),
+        )
+
+    async def _audio_back(query: CallbackQuery, task: Task, args: list[str]) -> None:
+        where = args[1] if len(args) > 1 else kb.BACK_TO_SOURCE
+
+        # Back from the name picker -> re-show the language picker (keep draft).
+        if where == kb.BACK_TO_LANG and task.audio_draft is not None:
+            task.audio_stage = AUDIO_AWAIT_LANG
+            await query.answer()
+            await query.message.edit_text(
+                pg.render_status(
+                    "Select Audio Language",
+                    [f"🎵 {task.audio_draft.label}",
+                     "Choose the language of this audio track:"],
+                    emoji="🌐",
+                ),
+                parse_mode=ParseMode.HTML,
+                reply_markup=kb.audio_language_menu(task.token),
+            )
+            return
+
+        # Back from the language picker (or fallback) -> the source menu,
+        # discarding the in-progress audio draft.
+        task.audio_stage = None
+        task.audio_draft = None
+        await query.answer()
+        await query.message.edit_text(
+            pg.render_status("Source Received", [f"🔗 {task.spec.label}", "Choose an action:"],
+                             emoji="🧲"),
             parse_mode=ParseMode.HTML,
             reply_markup=kb.source_menu(task.token, audio_count=len(task.extra_audios)),
         )

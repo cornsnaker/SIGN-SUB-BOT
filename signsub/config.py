@@ -89,6 +89,8 @@ class Config:
     caption_deco: str = "◎"
     caption_link: str = ""
     telegraph_author: str = "SignSub"
+    # Release tag prepended to output filenames, e.g. "[CR]". Runtime-editable.
+    release_name: str = ""
 
     owner_id: int = 0
     admin_ids: frozenset[int] = field(default_factory=frozenset)
@@ -135,6 +137,7 @@ class Config:
             caption_deco=os.getenv("CAPTION_DECO", "◎"),
             caption_link=os.getenv("CAPTION_LINK", ""),
             telegraph_author=os.getenv("TELEGRAPH_AUTHOR", "SignSub"),
+            release_name=(os.getenv("RELEASE_NAME") or os.getenv("RELEASER") or "").strip(),
             owner_id=owner_id,
             admin_ids=admin_ids,
             allowed_user_ids=allowed_ids,
