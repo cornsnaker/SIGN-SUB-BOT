@@ -2,5 +2,14 @@
 pyrogram==2.0.106
 # Native crypto acceleration for Pyrogram (faster up/downloads).
 tgcrypto==1.2.5
-# Async HTTP for the aria2 JSON-RPC client, Nyaa scraper and torrent fetches.
+# Async HTTP for the aria2 JSON-RPC client, Nyaa scraper, torrent fetches and
+# the AniList GraphQL lookups.
 aiohttp==3.10.11
+# Filename parsing (title / episode / season / release group) for auto-naming.
+anitopy==2.1.1
+# MediaInfo report generation (paired with the `mediainfo` system binary).
+pymediainfo==7.0.1
+# Publish the MediaInfo HTML report (incl. tables) to Telegraph and link it.
+html-telegraph-poster==0.5.0
+# Required by html-telegraph-poster after lxml split out its HTML cleaner.
+lxml-html-clean==0.4.5

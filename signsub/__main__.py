@@ -13,6 +13,7 @@ import sys
 from pyrogram import Client
 
 from .config import Config
+from .core import logbuffer
 from .core.manager import TaskManager
 from .handlers import router
 
@@ -25,6 +26,8 @@ def _configure_logging() -> None:
         format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
     )
     logging.getLogger("pyrogram").setLevel(logging.WARNING)
+    # Retain recent log lines in memory so admins can tail them via /logs.
+    logbuffer.install()
 
 
 async def _amain() -> int:

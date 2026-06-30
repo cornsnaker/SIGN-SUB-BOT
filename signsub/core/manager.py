@@ -9,25 +9,32 @@ purged whether the task succeeds, fails or is cancelled.
 from __future__ import annotations
 
 import asyncio
+import logging
 import shutil
 import time
 from pathlib import Path
 from typing import Optional
 
+import aiohttp
 from pyrogram import Client
+from pyrogram.enums import ParseMode
 
 from ..config import Config
+from ..leech import torrent_meta
 from ..leech.aria2_client import Aria2Client
 from ..leech.daemon import Aria2Daemon
 from ..leech.engine import LeechEngine, LeechError
 from ..leech.nyaa import NyaaScraper
-from ..processing.pipeline import PipelineError, SubtitlePipeline
+from ..processing import ffprobe, metadata
+from ..processing.pipeline import PipelineError, PipelineResult, SubtitlePipeline
 from ..ui import keyboards as kb
 from ..ui import progress as pg
 from ..upload.uploader import Uploader
 from .sources import SourceKind, SourceSpec
 from .status import StatusReporter
-from .task import Task, TaskState, new_token
+from .task import AUDIO_AWAIT_FILE, Task, TaskState, new_token
+
+log = logging.getLogger(__name__)
 
 _VIDEO_EXTS = {".mkv", ".mp4", ".m4v", ".mov", ".webm", ".ts"}
 # Evict tasks the user created but never started after this long, and never
@@ -43,6 +50,16 @@ class TaskManager:
         self._tasks: dict[str, Task] = {}
         self._runners: dict[str, asyncio.Task] = {}
         self._semaphore = asyncio.Semaphore(config.max_concurrent_tasks)
+
+        # Lightweight bot-wide metrics for the /stats and /users commands.
+        self._started_at = time.time()
+        self._total_created = 0
+        self._outcomes: dict[TaskState, int] = {
+            TaskState.DONE: 0,
+            TaskState.FAILED: 0,
+            TaskState.CANCELLED: 0,
+        }
+        self._seen_users: set[int] = set()
 
         self._daemon = Aria2Daemon(config)
         self._aria2 = Aria2Client(config.aria2_rpc_url, config.aria2_secret)
@@ -76,6 +93,9 @@ class TaskManager:
             spec=spec,
         )
         self._tasks[token] = task
+        self._total_created += 1
+        if user_id:
+            self._seen_users.add(user_id)
         return task
 
     def _prune_stale(self) -> None:
@@ -115,6 +135,12 @@ class TaskManager:
                 Path(task.spec.value).unlink(missing_ok=True)
             except OSError:
                 pass
+        # Remove the staging dir holding a not-yet-started uploaded video.
+        if task.spec.kind == SourceKind.LOCAL_FILE and task.work_subdir:
+            shutil.rmtree(task.work_subdir, ignore_errors=True)
+        # Remove any staged external audio for an abandoned task.
+        if task.audio_dir and task.audio_dir.exists():
+            shutil.rmtree(task.audio_dir, ignore_errors=True)
 
     def get(self, token: str) -> Optional[Task]:
         return self._tasks.get(token)
@@ -122,6 +148,113 @@ class TaskManager:
     @property
     def scraper(self) -> NyaaScraper:
         return self._scraper
+
+    # -- introspection (admin commands) -------------------------------------
+
+    def list_tasks(self) -> list[Task]:
+        """All tasks currently tracked (pending + active), newest first."""
+
+        return sorted(self._tasks.values(), key=lambda t: t.created_at, reverse=True)
+
+    def active_tasks(self) -> list[Task]:
+        """Tasks that have a running coroutine (i.e. past the menu stage)."""
+
+        return [t for t in self.list_tasks() if t.token in self._runners]
+
+    def seen_user_ids(self) -> list[int]:
+        return sorted(self._seen_users)
+
+    def stats(self) -> dict[str, object]:
+        """A snapshot of bot-wide counters for the /stats command."""
+
+        per_state: dict[str, int] = {}
+        for task in self._tasks.values():
+            per_state[task.state.value] = per_state.get(task.state.value, 0) + 1
+        return {
+            "uptime_seconds": max(0.0, time.time() - self._started_at),
+            "total_created": self._total_created,
+            "completed": self._outcomes[TaskState.DONE],
+            "failed": self._outcomes[TaskState.FAILED],
+            "cancelled": self._outcomes[TaskState.CANCELLED],
+            "active": len(self._runners),
+            "tracked": len(self._tasks),
+            "unique_users": len(self._seen_users),
+            "per_state": per_state,
+            "max_concurrent": self._cfg.max_concurrent_tasks,
+        }
+
+    # -- external audio -----------------------------------------------------
+
+    def awaiting_audio_task(self, chat_id: int) -> Optional[Task]:
+        """Return the (un-started) task in ``chat_id`` waiting for an audio file."""
+
+        for task in self._tasks.values():
+            if (
+                task.chat_id == chat_id
+                and task.state == TaskState.PENDING
+                and task.audio_stage == AUDIO_AWAIT_FILE
+            ):
+                return task
+        return None
+
+    def audio_dir_for(self, task: Task) -> Path:
+        """Per-task staging directory for external audio uploads/downloads."""
+
+        if task.audio_dir is None:
+            task.audio_dir = self._cfg.download_dir / "audio" / task.token
+        task.audio_dir.mkdir(parents=True, exist_ok=True)
+        return task.audio_dir
+
+    def audio_dest(self, task: Task, name: str) -> Path:
+        """A collision-free destination path for an audio file named ``name``."""
+
+        dest_dir = self.audio_dir_for(task)
+        dest = dest_dir / (name or "audio")
+        stem, suffix = dest.stem, dest.suffix
+        counter = 1
+        while dest.exists():
+            dest = dest_dir / f"{stem}_{counter}{suffix}"
+            counter += 1
+        return dest
+
+    def local_video_dest(self, task: Task, name: str) -> Path:
+        """A destination path (inside the task's work dir) for an uploaded video.
+
+        Placing it under ``download_dir / token`` means the standard task
+        ``finally`` cleanup (which removes that directory) reclaims the file.
+        """
+
+        base = Path(name).name or "upload.mkv"
+        if Path(base).suffix.lower() not in _VIDEO_EXTS:
+            base += ".mkv"
+        dest_dir = self._cfg.download_dir / task.token
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        task.work_subdir = dest_dir
+        return dest_dir / base
+
+    async def stage_remote_audio(self, task: Task, url: str) -> Path:
+        """Download a remote audio file to the task's audio staging dir.
+
+        The filename is taken from the ``Content-Disposition`` header when the
+        server provides one, otherwise from the URL's (percent-decoded) path.
+        """
+
+        timeout = aiohttp.ClientTimeout(total=None, sock_connect=30, sock_read=300)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url) as resp:
+                resp.raise_for_status()
+                name = (
+                    torrent_meta.filename_from_content_disposition(
+                        resp.headers.get("Content-Disposition")
+                    )
+                    or torrent_meta.filename_from_url(url)
+                    or "audio"
+                )
+                dest = self.audio_dest(task, name)
+                with dest.open("wb") as fh:
+                    async for chunk in resp.content.iter_chunked(1 << 16):
+                        fh.write(chunk)
+        return dest
 
     def attach_reporter(self, task: Task, reporter: StatusReporter) -> None:
         task.reporter = reporter
@@ -134,6 +267,12 @@ class TaskManager:
         runner = self._runners.get(token)
         if runner:
             runner.cancel()
+        else:
+            # No runner means the task was never launched (still collecting a
+            # source/audio). Drop it now so it stops intercepting messages and
+            # its staged audio is cleaned up; a running task is cleaned by its
+            # own finally-block instead.
+            self._discard_pending(token)
         return True
 
     def launch(self, task: Task) -> bool:
@@ -173,8 +312,8 @@ class TaskManager:
                 if task.cancelled:
                     raise asyncio.CancelledError()
                 await self._do_download(task, work_subdir)
-                produced = await self._do_process(task)
-                await self._do_upload(task, produced)
+                result = await self._do_process(task)
+                await self._do_upload(task, result)
 
             task.state = TaskState.DONE
             if reporter:
@@ -200,6 +339,8 @@ class TaskManager:
             if reporter:
                 await reporter.finalize(pg.render_error("Unexpected failure", repr(exc)))
         finally:
+            if task.state in self._outcomes:
+                self._outcomes[task.state] += 1
             await self._cleanup(task)
             self._tasks.pop(task.token, None)
 
@@ -207,6 +348,7 @@ class TaskManager:
         task.state = TaskState.DOWNLOADING
         reporter = task.reporter
         work_subdir.mkdir(parents=True, exist_ok=True)
+        download_start = time.monotonic()
 
         async def progress(stage, done, total, speed, eta):  # type: ignore[no-untyped-def]
             if reporter:
@@ -214,6 +356,21 @@ class TaskManager:
                     pg.render_progress(stage, done=done, total=total, speed=speed, eta=eta),
                     reply_markup=kb.cancel_only(task.token),
                 )
+
+        # A directly uploaded video file is already on disk inside work_subdir;
+        # there is nothing to leech, so skip straight to processing.
+        if task.spec.kind == SourceKind.LOCAL_FILE:
+            local = Path(task.spec.value)
+            if not local.is_file():
+                raise LeechError("The uploaded video file is no longer available.")
+            task.downloaded_files = [local]
+            if reporter:
+                await reporter.update(
+                    pg.render_status("Using Uploaded File", [local.name], emoji="📂"),
+                    reply_markup=kb.cancel_only(task.token),
+                    force=True,
+                )
+            return
 
         if reporter:
             await reporter.update(
@@ -228,13 +385,19 @@ class TaskManager:
         task.downloaded_files = files
         if not files:
             raise LeechError("Download finished but produced no files.")
+        task.download_secs = time.monotonic() - download_start
 
-    async def _do_process(self, task: Task) -> Path:
+    async def _do_process(self, task: Task) -> PipelineResult:
         task.state = TaskState.PROCESSING
         reporter = task.reporter
+        process_start = time.monotonic()
         target = self._pick_video(task.downloaded_files)
         if target is None:
             raise PipelineError("No video file (.mkv/.mp4/...) found in the download.")
+        try:
+            task.source_size = target.stat().st_size
+        except OSError:
+            task.source_size = 0
 
         async def progress(stage, done, total):  # type: ignore[no-untyped-def]
             if reporter:
@@ -252,26 +415,33 @@ class TaskManager:
                 force=True,
             )
 
-        result = await self._pipeline.process(target, progress_cb=progress)
+        result = await self._pipeline.process(
+            target, progress_cb=progress, extra_audios=task.extra_audios
+        )
+        task.process_secs = time.monotonic() - process_start
         task.produced_files.append(result.output_path)
         if reporter:
+            done_lines = [
+                f"Source track: #{result.source_stream_index}",
+                f"Signs kept: {result.events_kept} | dialogue dropped: {result.events_dropped}",
+                f"English subtitle tracks retained: {result.english_sub_count}",
+            ]
+            if result.extra_audio_count:
+                done_lines.append(f"External audio tracks added: {result.extra_audio_count}")
             await reporter.update(
-                pg.render_status(
-                    "Pipeline Done",
-                    [
-                        f"Source track: #{result.source_stream_index}",
-                        f"Signs kept: {result.events_kept} | dialogue dropped: {result.events_dropped}",
-                        f"English subtitle tracks retained: {result.english_sub_count}",
-                    ],
-                    emoji="✅",
-                ),
+                pg.render_status("Pipeline Done", done_lines, emoji="✅"),
                 force=True,
             )
-        return result.output_path
+        return result
 
-    async def _do_upload(self, task: Task, produced: Path) -> None:
+    async def _do_upload(self, task: Task, result: PipelineResult) -> None:
         task.state = TaskState.UPLOADING
         reporter = task.reporter
+
+        # Derive the canonical title / MediaInfo report / CRC32 / thumbnail for
+        # the caption, then (optionally) rename the file to a clean human name.
+        caption, produced, thumb = await self._build_caption(task, result)
+        result.output_path = produced
 
         async def progress(done, total, speed):  # type: ignore[no-untyped-def]
             if reporter:
@@ -288,14 +458,148 @@ class TaskManager:
                 force=True,
             )
 
-        caption = pg.render_status("Signs & Songs ready", [produced.name], emoji="📦")
+        upload_start = time.monotonic()
         await self._uploader.send_document(
             task.chat_id,
             produced,
             caption=caption,
+            thumb=thumb,
             progress_cb=progress,
             reply_to=task.trigger_message_id,
         )
+        task.upload_secs = time.monotonic() - upload_start
+
+        # Send the remux stats as its own message (not part of the caption).
+        stats = metadata.render_stats(
+            original_size=task.source_size,
+            output_size=produced.stat().st_size if produced.exists() else 0,
+            download_secs=task.download_secs,
+            process_secs=task.process_secs,
+            upload_secs=task.upload_secs,
+        )
+        if stats:
+            try:
+                await self._client.send_message(
+                    task.chat_id,
+                    stats,
+                    parse_mode=ParseMode.HTML,
+                    reply_to_message_id=task.trigger_message_id,
+                )
+            except Exception:  # noqa: BLE001 - stats are informational only
+                log.warning("Failed to send stats message", exc_info=True)
+
+        # Also send the extracted subtitle scripts as .txt for confirmation.
+        await self._send_subtitle_txts(task, result)
+
+    async def _build_caption(
+        self, task: Task, result: PipelineResult
+    ) -> tuple[str, Path, Optional[Path]]:
+        """Build the rich upload caption, optionally rename the output, and
+        fetch an AniList cover image to use as the upload thumbnail.
+
+        Best-effort: any failure (AniList/Telegraph/parse) falls back to the
+        previous simple status caption with the produced filename.
+        """
+
+        produced = result.output_path
+        source_name = result.source_name or produced.name
+
+        # Read the output's audio/subtitle languages to compute the type tag.
+        audio_langs: list[str] = []
+        sub_langs: list[str] = []
+        try:
+            info = await ffprobe.probe(produced, ffprobe_bin=self._cfg.ffprobe_bin)
+            audio_langs = [a.language or "und" for a in info.audios()]
+            sub_langs = [s.language or "und" for s in info.subtitles()]
+        except Exception:  # noqa: BLE001 - stream probe is best-effort
+            log.warning("Output probe for caption failed", exc_info=True)
+
+        try:
+            meta = await metadata.build_meta(
+                source_name=source_name,
+                output_path=produced,
+                video_codec=result.video_codec,
+                video_height=result.video_height,
+                audio_langs=audio_langs,
+                sub_langs=sub_langs,
+                anilist=self._cfg.anilist_enabled,
+                telegraph_author=self._cfg.telegraph_author,
+            )
+        except Exception:  # noqa: BLE001 - never fail the upload on metadata
+            log.warning("Caption metadata build failed", exc_info=True)
+            return (
+                pg.render_status("Signs & Songs ready", [produced.name], emoji="📦"),
+                produced,
+                None,
+            )
+
+        if self._cfg.auto_rename:
+            new_name = metadata.clean_filename(
+                meta, produced.stem, produced.suffix, release_name=self._cfg.release_name
+            )
+            if new_name and new_name != produced.name:
+                target = produced.with_name(new_name)
+                try:
+                    produced.rename(target)
+                    self._retarget_produced(task, produced, target)
+                    produced = target
+                except OSError:
+                    log.warning("Could not rename %s -> %s", produced.name, new_name, exc_info=True)
+
+        # Best-effort thumbnail from the AniList cover image.
+        thumb: Optional[Path] = None
+        if meta.cover_url:
+            dest = produced.with_name(f".thumb_{task.token}.jpg")
+            thumb = await metadata.download_cover(meta.cover_url, dest)
+            if thumb:
+                task.produced_files.append(thumb)
+
+        caption = metadata.render_caption(
+            meta, deco=self._cfg.caption_deco, link=self._cfg.caption_link
+        )
+        return caption, produced, thumb
+
+    @staticmethod
+    def _retarget_produced(task: Task, old: Path, new: Path) -> None:
+        """Keep the task's produced-files list in sync after a rename."""
+
+        task.produced_files = [new if p == old else p for p in task.produced_files]
+        if new not in task.produced_files:
+            task.produced_files.append(new)
+
+    async def _send_subtitle_txts(self, task: Task, result: PipelineResult) -> None:
+        """Upload the extracted signs/songs and full subtitle as ``.txt`` files.
+
+        These are confirmation artifacts; a failure here must never fail the
+        task (the main MKV is already delivered).
+        """
+
+        stem = result.output_path.stem
+        artifacts = [
+            (result.signs_sub_path, f"{stem}.signs.txt",
+             "Signs & Songs subtitle (extracted)"),
+            (result.full_sub_path, f"{stem}.fullsub.txt",
+             "Full English subtitle (source)"),
+        ]
+        for src, name, label in artifacts:
+            if src is None or not Path(src).is_file():
+                continue
+            txt_path = Path(src).with_name(name)
+            try:
+                shutil.copyfile(src, txt_path)
+            except OSError:
+                log.warning("Could not stage %s for upload", name, exc_info=True)
+                continue
+            task.produced_files.append(txt_path)
+            try:
+                await self._uploader.send_document(
+                    task.chat_id,
+                    txt_path,
+                    caption=pg.render_status(label, [name], emoji="🧾"),
+                    reply_to=task.trigger_message_id,
+                )
+            except Exception:
+                log.warning("Failed to upload %s", name, exc_info=True)
 
     async def _cleanup(self, task: Task) -> None:
         """Purge all on-disk assets for this task (always runs)."""
@@ -307,6 +611,8 @@ class TaskManager:
                 pass
         if task.work_subdir and task.work_subdir.exists():
             shutil.rmtree(task.work_subdir, ignore_errors=True)
+        if task.audio_dir and task.audio_dir.exists():
+            shutil.rmtree(task.audio_dir, ignore_errors=True)
         # Defensive: remove any stray produced/temp files outside the subdir.
         for path in [*task.produced_files]:
             try:

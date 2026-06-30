@@ -29,6 +29,7 @@ class Uploader:
         path: Path,
         *,
         caption: str = "",
+        thumb: Optional[Path] = None,
         progress_cb: Optional[ProgressCb] = None,
         reply_to: Optional[int] = None,
     ) -> Message:
@@ -52,6 +53,7 @@ class Uploader:
             chat_id=chat_id,
             document=str(path),
             caption=caption,
+            thumb=str(thumb) if thumb else None,
             parse_mode=ParseMode.HTML,
             force_document=True,
             reply_to_message_id=reply_to,

@@ -4,8 +4,10 @@ Pipeline stages:
 
 1. ``ffprobe`` the input to map streams dynamically.
 2. Extract the primary English ASS subtitle layer to a temporary ``.ass``.
-3. Filter the ``[Events]`` section line-by-line, dropping any ``Dialogue`` whose
-   style is named ``default`` or ``song`` -- leaving only signs/typesetting/SFX.
+3. Filter the ``[Events]`` section line-by-line, keeping only ``Dialogue`` lines
+   whose text is positioned on screen via ``\\pos(...)`` or ``\\move(...)``
+   (i.e. signs/typesetting/song captions), dropping plain dialogue. The
+   ``[Script Info]`` and ``[V4+ Styles]`` sections are preserved verbatim.
 4. Remux video + audio + legacy English subtitles + the new signs track +
    attachments/fonts into ``{name}_clean_english.mkv``; non-English subtitle
    tracks are dropped. The new track is tagged ``language=eng`` /
@@ -15,18 +17,34 @@ Pipeline stages:
 from __future__ import annotations
 
 import re
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Awaitable, Callable, Optional
+from typing import TYPE_CHECKING, Awaitable, Callable, Optional, Sequence
 
 from ..config import Config
 from ..core import proc
 from . import ffprobe
 
+if TYPE_CHECKING:
+    from ..core.task import ExtraAudio
+
 ProgressCb = Callable[[str, float, float], Awaitable[None]]
 
-BANNED_STYLES = {"default", "song"}
+# A subtitle event is treated as a "sign/song" (kept) when its text carries an
+# absolute-position override -- ``\pos(...)`` or ``\move(...)``. Typesetting,
+# signs and song captions are positioned on screen; plain dialogue is not. This
+# holds across releases regardless of style names (some use a dedicated
+# ``Caption`` style with alignment baked in, others use typeset font styles with
+# an inline ``\an7``), so keying off the positioning tag is the portable signal.
+_POS_RE = re.compile(r"\\(?:pos|move)\s*\(")
 _TIME_RE = re.compile(r"time=(\d+):(\d+):(\d+\.?\d*)")
+
+
+def _is_sign_event(text: str) -> bool:
+    """True if an event is a positioned sign/song (carries \\pos or \\move)."""
+
+    return bool(_POS_RE.search(text))
 
 
 @dataclass(slots=True)
@@ -37,6 +55,14 @@ class PipelineResult:
     events_dropped: int
     english_sub_count: int
     temp_files: list[Path]
+    extra_audio_count: int = 0
+    # The extracted subtitle scripts, retained for confirmation uploads.
+    full_sub_path: Optional[Path] = None
+    signs_sub_path: Optional[Path] = None
+    # Source filename + video stream info, used to build the upload caption.
+    source_name: str = ""
+    video_codec: Optional[str] = None
+    video_height: Optional[int] = None
 
 
 class PipelineError(RuntimeError):
@@ -47,17 +73,27 @@ class SubtitlePipeline:
     def __init__(self, config: Config) -> None:
         self._cfg = config
 
-    async def process(self, mkv_path: Path, progress_cb: Optional[ProgressCb] = None) -> PipelineResult:
+    async def process(
+        self,
+        mkv_path: Path,
+        progress_cb: Optional[ProgressCb] = None,
+        *,
+        extra_audios: Optional[Sequence["ExtraAudio"]] = None,
+    ) -> PipelineResult:
         temp_files: list[Path] = []
         try:
-            return await self._run(mkv_path, progress_cb, temp_files)
+            return await self._run(mkv_path, progress_cb, temp_files, extra_audios or [])
         except Exception:
             for tmp in temp_files:
                 _safe_unlink(tmp)
             raise
 
     async def _run(
-        self, mkv_path: Path, progress_cb: Optional[ProgressCb], temp_files: list[Path]
+        self,
+        mkv_path: Path,
+        progress_cb: Optional[ProgressCb],
+        temp_files: list[Path],
+        extra_audios: Sequence["ExtraAudio"],
     ) -> PipelineResult:
         if not mkv_path.is_file():
             raise PipelineError(f"Input file does not exist: {mkv_path}")
@@ -104,41 +140,87 @@ class SubtitlePipeline:
         # -- Stage 4: remux -----------------------------------------------
         english_subs = [s for s in info.subtitles() if s.is_english]
         new_track_sub_index = len(english_subs)
+        original_audio_count = len(info.audios())
+        valid_audios = [a for a in extra_audios if Path(a.path).is_file()]
         duration = await self._duration(mkv_path)
 
-        remux_cmd = [
-            self._cfg.ffmpeg_bin,
-            "-y",
-            "-i",
-            str(mkv_path),
-            "-i",
-            str(signs_ass),
-            "-map",
-            "0:v",
-            "-map",
-            "0:a",
-            "-map",
-            "0:s:m:language:eng?",  # only English-tagged subtitles
-            "-map",
-            "1:s:0",  # the new signs-only track
-            "-map",
-            "0:t?",  # attachments / fonts (optional)
-            "-c",
-            "copy",
-            f"-metadata:s:s:{new_track_sub_index}",
-            "language=eng",
-            f"-metadata:s:s:{new_track_sub_index}",
-            "title=Signs & Songs",
-            "-disposition:s:" + str(new_track_sub_index),
-            "default",
-            str(output),
+        remux_cmd = [self._cfg.ffmpeg_bin, "-y", "-i", str(mkv_path), "-i", str(signs_ass)]
+        # External audio inputs occupy ffmpeg input indices 2, 3, ...
+        for audio in valid_audios:
+            remux_cmd += ["-i", str(audio.path)]
+
+        remux_cmd += ["-map", "0:v?"]
+        # Map each external audio FIRST (input indices 2, 3, ...), then the
+        # original audio. Ordering the added track ahead of the originals is the
+        # key fix for the "added audio is muted" reports: many players (incl.
+        # Telegram's in-app player and most mobile/hardware players) auto-play
+        # the *first* audio stream by index and ignore the ``default``
+        # disposition flag, so a track placed after the originals never gets
+        # heard. Putting it first makes it play everywhere.
+        for offset in range(len(valid_audios)):
+            remux_cmd += ["-map", f"{2 + offset}:a:0"]
+        remux_cmd += ["-map", "0:a?"]
+        # Map English-tagged subtitles by their absolute stream index. We avoid
+        # the combined ``0:s:m:language:eng`` specifier because some ffmpeg
+        # builds reject it ("Failed to set value ... for option 'map'");
+        # explicit ``0:<index>`` maps are portable across versions.
+        for sub in english_subs:
+            remux_cmd += ["-map", f"0:{sub.index}"]
+        remux_cmd += [
+            "-map", "1:s:0",                 # the new signs-only track
+            "-map", "0:t?",                  # attachments / fonts (optional)
+            "-c", "copy",                    # stream-copy everything (no re-encode)
         ]
+        if valid_audios:
+            # Stream-copy the added audio (no re-encode), but fix the muxing so
+            # it doesn't drift/stutter ("lagging") during playback. Uploaded
+            # audio commonly starts at a non-zero/negative timestamp (encoder
+            # delay) or uses a different timebase than the video; copied as-is
+            # the player keeps re-syncing and the output appears to lag.
+            #   * +genpts          -> fill in missing presentation timestamps
+            #   * avoid_negative_ts make_zero -> rebase every stream to start at
+            #                          0 so audio and video share an origin
+            #   * max_interleave_delta 0 -> don't let the muxer stall trying to
+            #                          interleave streams of unequal duration
+            #   * muxpreload/muxdelay 0  -> no artificial start offset
+            remux_cmd[1:1] = ["-fflags", "+genpts"]
+            remux_cmd += [
+                "-avoid_negative_ts", "make_zero",
+                "-max_interleave_delta", "0",
+                "-muxpreload", "0",
+                "-muxdelay", "0",
+            ]
+        # Tag the new signs subtitle track.
+        remux_cmd += [
+            f"-metadata:s:s:{new_track_sub_index}", "language=eng",
+            f"-metadata:s:s:{new_track_sub_index}", "title=Signs & Songs",
+            f"-disposition:s:{new_track_sub_index}", "default",
+        ]
+        # Added audios are now output streams a:0 .. a:(k-1); originals follow.
+        for j, audio in enumerate(valid_audios):
+            remux_cmd += [
+                f"-metadata:s:a:{j}", f"language={audio.language or 'und'}",
+            ]
+            if audio.title:
+                remux_cmd += [f"-metadata:s:a:{j}", f"title={audio.title}"]
+        # Make the first added track the sole default and clear default off the
+        # originals (which now sit at a:k ..), so disposition-aware players also
+        # select the added audio.
+        if valid_audios:
+            remux_cmd += ["-disposition:a:0", "default"]
+            for i in range(len(valid_audios), len(valid_audios) + original_audio_count):
+                remux_cmd += [f"-disposition:a:{i}", "0"]
+        remux_cmd.append(str(output))
+
         await self._run_with_progress(remux_cmd, duration, progress_cb, "Remuxing")
         if not output.is_file():
             raise PipelineError("Remux completed but the output file is missing.")
 
-        _safe_unlink(temp_ass)
-        _safe_unlink(signs_ass)
+        video = info.first_video()
+
+        # NB: keep ``temp_ass`` (full extracted sub) and ``signs_ass`` (filtered
+        # signs/songs) on disk so the bot can upload them as ``.txt`` for
+        # confirmation; the task's cleanup removes them afterwards.
         return PipelineResult(
             output_path=output,
             source_stream_index=source.index,
@@ -146,6 +228,12 @@ class SubtitlePipeline:
             events_dropped=dropped,
             english_sub_count=len(english_subs),
             temp_files=[temp_ass, signs_ass],
+            extra_audio_count=len(valid_audios),
+            full_sub_path=temp_ass if temp_ass.is_file() else None,
+            signs_sub_path=signs_ass if signs_ass.is_file() else None,
+            source_name=mkv_path.name,
+            video_codec=video.codec_name if video else None,
+            video_height=video.height if video else None,
         )
 
     async def _run_with_progress(
@@ -156,19 +244,24 @@ class SubtitlePipeline:
         stage: str,
     ) -> None:
         rc = 0
-        last_tail = ""
+        recent: deque[str] = deque(maxlen=40)
         async for line in proc.stream_stderr(cmd):
             if line.startswith("__RC__:"):
                 rc = int(line.split(":", 1)[1])
                 continue
-            last_tail = line
+            # ffmpeg emits a continuous in-place progress line; don't let it
+            # crowd out the real diagnostics in the rolling buffer.
+            if not _TIME_RE.search(line):
+                recent.append(line)
             match = _TIME_RE.search(line)
             if match and duration > 0 and progress_cb:
                 hrs, mins, secs = match.groups()
                 done = int(hrs) * 3600 + int(mins) * 60 + float(secs)
                 await progress_cb(stage, min(done, duration), duration)
         if rc != 0:
-            raise PipelineError(f"FFmpeg {stage.lower()} failed (rc={rc}): {last_tail[-300:]}")
+            raise PipelineError(
+                f"FFmpeg {stage.lower()} failed (rc={rc}): {_ffmpeg_error_summary(recent)}"
+            )
         if progress_cb and duration > 0:
             await progress_cb(stage, duration, duration)
 
@@ -195,8 +288,38 @@ class SubtitlePipeline:
             await cb(stage, done, total)
 
 
+_ERROR_HINTS = (
+    "error", "invalid", "could not", "cannot", "no such", "failed",
+    "unable", "not found", "permission", "denied", "unsupported",
+    "incorrect", "conversion failed", "unknown", "not currently supported",
+)
+
+
+def _ffmpeg_error_summary(recent: "deque[str]") -> str:
+    """Build a useful error string from the tail of ffmpeg's stderr.
+
+    ffmpeg's final line is usually a generic ``Error opening output files:
+    Invalid argument``; the actionable diagnostic (e.g. an unsupported codec
+    or a bad stream map) appears earlier. We surface the most relevant
+    error-looking lines so failures are diagnosable instead of opaque.
+    """
+
+    lines = [ln for ln in recent if ln.strip()]
+    if not lines:
+        return "no stderr captured"
+    flagged = [ln for ln in lines if any(h in ln.lower() for h in _ERROR_HINTS)]
+    chosen = flagged[-4:] if flagged else lines[-4:]
+    summary = " | ".join(chosen)
+    return summary[-500:]
+
+
 def _filter_ass(temp_ass: Path, output_ass: Path) -> tuple[int, int]:
-    """Strip dialogue styles from ``temp_ass`` -> ``output_ass``.
+    """Keep only positioned sign/song events from ``temp_ass`` -> ``output_ass``.
+
+    A ``Dialogue`` line is kept only when its text is positioned on screen via
+    ``\\pos(...)`` or ``\\move(...)`` (typesetting/signs/song captions); plain
+    dialogue is dropped. The ``[Script Info]`` and ``[V4+ Styles]`` sections
+    (and any other non-event lines) are copied through unchanged.
 
     Returns ``(events_kept, events_dropped)`` for the ``Dialogue`` lines.
     """
@@ -217,16 +340,16 @@ def _filter_ass(temp_ass: Path, output_ass: Path) -> tuple[int, int]:
             out.append(line)
             continue
         if in_events and stripped.startswith("Dialogue:"):
+            # Text is the 10th field; everything after the 9th comma.
             parts = line.split(",", 9)
-            if len(parts) > 3:
-                style = parts[3].strip().lower()
-                if style in BANNED_STYLES:
-                    dropped += 1
-                    continue
+            text = parts[9] if len(parts) > 9 else ""
+            if _is_sign_event(text):
                 kept += 1
-            out.append(line)
-        else:
-            out.append(line)
+                out.append(line)
+            else:
+                dropped += 1
+            continue
+        out.append(line)
 
     output_ass.write_text("".join(out), encoding="utf-8")
     return kept, dropped

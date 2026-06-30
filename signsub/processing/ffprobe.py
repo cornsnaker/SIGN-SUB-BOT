@@ -17,6 +17,8 @@ class Stream:
     codec_name: str
     language: Optional[str]
     title: Optional[str]
+    width: Optional[int] = None
+    height: Optional[int] = None
     tags: dict[str, str] = field(default_factory=dict)
 
     @property
@@ -39,6 +41,15 @@ class MediaInfo:
 
     def subtitles(self) -> list[Stream]:
         return [s for s in self.streams if s.is_subtitle]
+
+    def audios(self) -> list[Stream]:
+        return [s for s in self.streams if s.codec_type == "audio"]
+
+    def first_video(self) -> Optional[Stream]:
+        for stream in self.streams:
+            if stream.codec_type == "video":
+                return stream
+        return None
 
     def first_english_ass(self) -> Optional[Stream]:
         """Return the first English ASS/SSA subtitle stream, if any."""
@@ -92,6 +103,8 @@ async def probe(path: Path, *, ffprobe_bin: str = "ffprobe") -> MediaInfo:
                 codec_name=str(raw.get("codec_name", "")),
                 language=tags.get("language"),
                 title=tags.get("title"),
+                width=int(raw["width"]) if raw.get("width") else None,
+                height=int(raw["height"]) if raw.get("height") else None,
                 tags=tags,
             )
         )
