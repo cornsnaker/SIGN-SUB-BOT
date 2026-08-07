@@ -122,12 +122,13 @@ class SubtitlePipeline:
 
         # -- Stage 4: remux -----------------------------------------------
         english_subs = [s for s in info.subtitles() if s.is_english]
-        # The signs track is appended after the English subs ffmpeg actually
-        # writes, so index the metadata/disposition at that real count. Probe
-        # with the same ``s:m:language:eng`` selector the muxer uses so the
-        # index can never point past the last written subtitle stream.
-        new_track_sub_index = await self._english_sub_count(mkv_path)
+        new_track_sub_index = len(english_subs)
         duration = await self._duration(mkv_path)
+
+        # Build explicit stream maps for compatibility with FFmpeg < 6.1
+        # (the metadata match specifier `0:s:m:language:eng?` is not widely
+        # supported).
+        attachments = [s for s in info.streams if s.codec_type == "attachment"]
 
         remux_cmd = [
             self._cfg.ffmpeg_bin,
@@ -140,12 +141,16 @@ class SubtitlePipeline:
             "0:v",
             "-map",
             "0:a",
-            "-map",
-            "0:s:m:language:eng?",  # only English-tagged subtitles
-            "-map",
-            "1:s:0",  # the new signs-only track
-            "-map",
-            "0:t?",  # attachments / fonts (optional)
+        ]
+        # Map each English subtitle stream by its absolute index.
+        for sub in english_subs:
+            remux_cmd += ["-map", f"0:{sub.index}"]
+        # The new signs-only track from input #1.
+        remux_cmd += ["-map", "1:s:0"]
+        # Map attachments (fonts) by their absolute index.
+        for att in attachments:
+            remux_cmd += ["-map", f"0:{att.index}"]
+        remux_cmd += [
             "-c",
             "copy",
             f"-metadata:s:s:{new_track_sub_index}",
@@ -194,26 +199,6 @@ class SubtitlePipeline:
             raise PipelineError(f"FFmpeg {stage.lower()} failed (rc={rc}): {last_tail[-300:]}")
         if progress_cb and duration > 0:
             await progress_cb(stage, duration, duration)
-
-    async def _english_sub_count(self, path: Path) -> int:
-        """Count subtitle streams matching ``s:m:language:eng`` (the mux selector)."""
-
-        cmd = [
-            self._cfg.ffprobe_bin,
-            "-v",
-            "error",
-            "-select_streams",
-            "s:m:language:eng",
-            "-show_entries",
-            "stream=index",
-            "-of",
-            "csv=p=0",
-            str(path),
-        ]
-        result = await proc.run(cmd, timeout=60)
-        if not result.ok:
-            return 0
-        return sum(1 for line in result.stdout.splitlines() if line.strip())
 
     async def _duration(self, path: Path) -> float:
         cmd = [
