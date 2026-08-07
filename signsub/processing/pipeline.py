@@ -26,7 +26,27 @@ from . import ffprobe
 ProgressCb = Callable[[str, float, float], Awaitable[None]]
 
 BANNED_STYLES = {"default", "song"}
+
+# Dialogue style families recognised when auto-detecting a full .ass file's
+# style scheme, in priority order. "SubsPlus+" releases use Subtitle /
+# Subtitle-Alt for dialogue and Caption for positioned signs, while fansub
+# releases use Default / Song for dialogue and everything else for signs.
+_DIALOGUE_STYLE_FAMILIES: tuple[tuple[str, ...], ...] = (
+    ("default", "song"),
+    ("subtitle", "main", "dialogue", "dialog", "text"),
+)
 _TIME_RE = re.compile(r"time=(\d+):(\d+):(\d+\.?\d*)")
+
+
+def _in_style_family(style: str, family: tuple[str, ...]) -> bool:
+    """Return True if a lower-cased style name belongs to a dialogue family."""
+
+    for name in family:
+        if style == name or style.startswith(name + "-"):
+            return True
+        if style.startswith(name) and style[len(name):].isdigit():
+            return True
+    return False
 
 
 @dataclass(slots=True)
@@ -278,6 +298,80 @@ def filter_ass_file(input_ass: Path, output_ass: Path) -> tuple[int, int]:
     out, kept, dropped = filter_sign_styles(lines)
     output_ass.write_text("".join(out), encoding="utf-8")
     return kept, dropped
+
+
+def detect_dialogue_styles(lines: list[str]) -> set[str]:
+    """Detect the dialogue style names used by a full ``.ass`` file.
+
+    Returns the lower-cased style names that should be treated as dialogue and
+    dropped when extracting sign subs. Falls back to ``BANNED_STYLES`` when no
+    known dialogue style is present.
+
+    Known dialogue style families (matched as exact names, ``name-N`` variants
+    such as ``subtitle-alt``, and ``nameN`` suffixed variants such as
+    ``subtitle2``):
+
+    - ``default`` / ``song``            -- fansub releases (e.g. ``Fullsub.ass``)
+    - ``subtitle`` / ``caption``...     -- SubsPlus+ releases (e.g. ``NEW FULL
+      SUB.ass``), where ``Caption`` carries the positioned signs
+    """
+
+    present: set[str] = set()
+    in_events = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_events = stripped.lower() == "[events]"
+            continue
+        if in_events and stripped.startswith("Dialogue:"):
+            parts = line.split(",", 9)
+            if len(parts) > 3:
+                present.add(parts[3].strip().lower())
+
+    for family in _DIALOGUE_STYLE_FAMILIES:
+        if any(_in_style_family(style, family) for style in present):
+            return {style for style in present if _in_style_family(style, family)}
+    return set(BANNED_STYLES)
+
+
+def filter_ass_file_auto(input_ass: Path, output_ass: Path) -> tuple[int, int, set[str]]:
+    """Extract sign subs from a full ``.ass`` file, auto-detecting its styles.
+
+    Returns ``(events_kept, events_dropped, banned_styles)`` where
+    ``banned_styles`` is the detected set of dialogue style names that was
+    filtered out.
+    """
+
+    try:
+        lines = input_ass.read_text(encoding="utf-8").splitlines(keepends=True)
+    except UnicodeDecodeError:
+        lines = input_ass.read_text(encoding="utf-8-sig").splitlines(keepends=True)
+
+    banned = detect_dialogue_styles(lines)
+    out: list[str] = []
+    in_events = False
+    kept = 0
+    dropped = 0
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_events = stripped.lower() == "[events]"
+            out.append(line)
+            continue
+        if in_events and stripped.startswith("Dialogue:"):
+            parts = line.split(",", 9)
+            if len(parts) > 3:
+                style = parts[3].strip().lower()
+                if style in banned:
+                    dropped += 1
+                    continue
+                kept += 1
+            out.append(line)
+        else:
+            out.append(line)
+
+    output_ass.write_text("".join(out), encoding="utf-8")
+    return kept, dropped, banned
 
 
 def _safe_unlink(path: Path) -> None:

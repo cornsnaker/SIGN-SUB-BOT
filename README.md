@@ -114,5 +114,10 @@ python SIGNSUB_ASS.py            # prompts for the .ass path
 python SIGNSUB_ASS.py Fullsub.ass
 ```
 
-It writes `{name}_signs.ass` next to the input, keeping every style except
-`default`/`song` (e.g. the sign styles in `Fullsub.ass`).
+It writes `{name}_signs.ass` next to the input. The dialogue styles to drop
+are auto-detected per file:
+
+- Fansub releases like `Fullsub.ass` — drops `Default`/`Song`, keeps the
+  sign styles (`VAG Rounded BT`, `First Grader`, ...).
+- SubsPlus+ releases like `NEW FULL SUB.ass` — drops
+  `Subtitle`/`Subtitle-Alt`, keeps the positioned `Caption` signs.

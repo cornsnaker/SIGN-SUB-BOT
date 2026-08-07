@@ -1,0 +1,653 @@
+[Script Info]
+Title: [SubsPlus+]
+ScriptType: v4.00+
+WrapStyle: 0
+PlayResX: 1920
+PlayResY: 1080
+ScaledBorderAndShadow: yes
+YCbCr Matrix: TV.709
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Subtitle,SPOverrideF,72,&H00FFFFFF,&H00FFFFFF,&H00000000,&HA0000000,-1,0,0,0,100,100,0,0,1,3.6,1.5,2,60,60,60,1
+Style: Subtitle-Alt,SPOverrideF,72,&H00FFFFFF,&H00FFFFFF,&H00743E15,&HA0000000,-1,0,0,0,100,100,0,0,1,3.6,1.5,2,60,60,60,1
+Style: Caption,SPOverrideF,72,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,1.5,1.5,7,60,60,60,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 10,0:00:04.02,0:00:07.09,Subtitle,,0,0,0,,Hey, Tweety. Where's the letter from Big Bwudder?
+Dialogue: 10,0:00:07.09,0:00:09.67,Subtitle,,0,0,0,,Good question. I guess he doesn't have one today.
+Dialogue: 10,0:00:10.14,0:00:12.67,Subtitle,,0,0,0,,That little guy's name is Chappy, actually.
+Dialogue: 10,0:00:13.59,0:00:15.40,Subtitle,,0,0,0,,It's Allen!
+Dialogue: 10,0:00:16.01,0:00:17.30,Subtitle,,0,0,0,,Did you say Allen's here?!
+Dialogue: 10,0:00:17.85,0:00:19.12,Subtitle,,0,0,0,,Allen!
+Dialogue: 10,0:00:19.56,0:00:20.76,Subtitle,,0,0,0,,I'm home!
+Dialogue: 10,0:01:52.58,0:01:55.42,Subtitle,,0,0,0,,{\an8}Allen, you've grown up so much.
+Dialogue: 10,0:01:55.42,0:01:57.29,Subtitle,,0,0,0,,{\an8}Hard to believe it's been four years.
+Dialogue: 10,0:01:57.29,0:01:59.50,Subtitle,,0,0,0,,{\an8}There's plenty of food, so eat all you want.
+Dialogue: 10,0:01:59.50,0:02:00.52,Subtitle,,0,0,0,,Okay!
+Dialogue: 10,0:02:00.52,0:02:03.08,Subtitle,,0,0,0,,I see Mash and Myulla have grown up a lot, too!
+Dialogue: 10,0:02:05.93,0:02:07.89,Subtitle,,0,0,0,,Huh? What's wrong, Myulla?
+Dialogue: 10,0:02:07.89,0:02:10.76,Subtitle,,0,0,0,,She was barely a year old when you were last here.
+Dialogue: 10,0:02:10.76,0:02:12.11,Subtitle,,0,0,0,,Her memories of you are probably fuzzy.
+Dialogue: 10,0:02:12.11,0:02:14.18,Subtitle,,0,0,0,,Aw man! That sucks!
+Dialogue: 10,0:02:14.18,0:02:18.11,Subtitle,,0,0,0,,I play with her through Chappy all the time,\Nso I just assumed we were close...
+Dialogue: 10,0:02:18.11,0:02:21.81,Subtitle,,0,0,0,,We appreciate you sending us\Nmonthly letters and money, Allen.
+Dialogue: 10,0:02:21.81,0:02:23.79,Subtitle,,0,0,0,,But are you still making enough to get by?
+Dialogue: 10,0:02:23.79,0:02:25.97,Subtitle,,0,0,0,,Oh, right, I haven't told you yet.
+Dialogue: 10,0:02:25.97,0:02:29.70,Subtitle,,0,0,0,,Things have changed, I'm now a guest\Nof the Granvelles instead of their manservant.
+Dialogue: 10,0:02:29.98,0:02:32.40,Subtitle,,0,0,0,,And I'll be going to Academy City come April.
+Dialogue: 10,0:02:33.67,0:02:35.42,Subtitle,,0,0,0,,WHAAAAT?!
+Dialogue: 10,0:02:35.42,0:02:38.41,Subtitle,,0,0,0,,Yeah. It won't be as easy to send money.
+Dialogue: 10,0:02:38.41,0:02:40.28,Subtitle,,0,0,0,,So, I just brought a lump sum for you guys instead.
+Dialogue: 10,0:02:40.28,0:02:41.32,Subtitle,,0,0,0,,Here, 100 gold coins.
+Dialogue: 10,0:02:41.32,0:02:42.38,Subtitle,,0,0,0,,A HUNDRED?!
+Dialogue: 10,0:02:42.38,0:02:44.04,Subtitle,,0,0,0,,N-No way, we can't accept that!
+Dialogue: 10,0:02:44.04,0:02:46.75,Subtitle,,0,0,0,,Yeah! You're going to need it for life at the Academy!
+Dialogue: 10,0:02:46.75,0:02:50.52,Subtitle,,0,0,0,,Aw, it's fine. I still have 600 in savings\Nfrom selling Armored Ants.
+Dialogue: 10,0:02:50.52,0:02:51.86,Subtitle,,0,0,0,,Six hundred...?
+Dialogue: 10,0:02:51.86,0:02:53.93,Subtitle,,0,0,0,,Armored Ants? Are those monsters?
+Dialogue: 10,0:02:53.93,0:02:55.30,Subtitle,,0,0,0,,That's right.
+Dialogue: 10,0:02:55.30,0:02:58.57,Subtitle,,0,0,0,,They're insect monsters that nest\Nat the foot of the White Dragon Mountains.
+Dialogue: 10,0:02:58.57,0:03:01.59,Subtitle,,0,0,0,,I came across a lot of goblin\Nand orc boroughs in that area, too.
+Dialogue: 10,0:03:01.59,0:03:02.23,Subtitle,,0,0,0,,Wow!
+Dialogue: 10,0:03:02.23,0:03:05.79,Subtitle,,0,0,0,,Our son hasn't changed a bit.\NHe's still doing the unbelievable.
+Dialogue: 10,0:03:05.79,0:03:07.50,Subtitle,,0,0,0,,You can say that again.
+Dialogue: 10,0:03:10.38,0:03:11.79,Subtitle,,0,0,0,,You're leaving already?
+Dialogue: 10,0:03:11.79,0:03:14.92,Subtitle,,0,0,0,,Yeah. I have work waiting for me.
+Dialogue: 10,0:03:14.92,0:03:17.38,Subtitle,,0,0,0,,I'm gonna go to the Academy when I turn 12, too!
+Dialogue: 10,0:03:17.38,0:03:19.73,Subtitle,,0,0,0,,Sounds good. I'll be waiting for you.
+Dialogue: 10,0:03:21.34,0:03:24.10,Subtitle,,0,0,0,,Are you my big bwudder from the letters?
+Dialogue: 10,0:03:26.33,0:03:27.67,Subtitle,,0,0,0,,Yeah, I am.
+Dialogue: 10,0:03:27.67,0:03:29.74,Subtitle,,0,0,0,,Sorry I couldn't come visit you more often.
+Dialogue: 10,0:03:36.93,0:03:38.64,Subtitle,,0,0,0,,Stay safe out there, son.
+Dialogue: 10,0:03:38.64,0:03:40.73,Subtitle,,0,0,0,,Don't bite off more than you can chew, okay?
+Dialogue: 10,0:03:42.30,0:03:45.50,Subtitle,,0,0,0,,Bye for now, Mom, Dad.
+Dialogue: 10,0:03:45.50,0:03:47.58,Subtitle,,0,0,0,,Bye-bye!
+Dialogue: 10,0:03:45.50,0:03:47.58,Subtitle-Alt,,0,0,0,,Come back soon!
+Dialogue: 10,0:03:54.37,0:03:56.59,Subtitle,,0,0,0,,Well, well. If it isn't our HONORED guest.
+Dialogue: 10,0:03:56.59,0:04:00.71,Subtitle,,0,0,0,,Why are you sweeping the courtyard\Nafter quitting your manservant job behind my back?
+Dialogue: 10,0:04:01.45,0:04:04.16,Subtitle,,0,0,0,,I'm just lending a hand until we leave for the academy.
+Dialogue: 10,0:04:04.16,0:04:05.03,Subtitle,,0,0,0,,Hmph!
+Dialogue: 10,0:04:05.03,0:04:07.22,Subtitle,,0,0,0,,What's she all grumpy for?
+Dialogue: 10,0:04:09.54,0:04:10.97,Subtitle,,0,0,0,,Hey, Allen.
+Dialogue: 10,0:04:10.97,0:04:16.14,Subtitle,,0,0,0,,Are you serious about coming to Academy City\Nwith me and fighting in the war?
+Dialogue: 10,0:04:16.14,0:04:18.15,Subtitle,,0,0,0,,The noble's duty doesn't even apply to you.
+Dialogue: 10,0:04:18.15,0:04:20.28,Subtitle,,0,0,0,,Well, that's the job I was hired to do.
+Dialogue: 10,0:04:22.05,0:04:24.05,Subtitle,,0,0,0,,You're such a weirdo, I swear.
+Dialogue: 10,0:04:24.05,0:04:25.62,Subtitle,,0,0,0,,AAAALLLLEN!
+Dialogue: 10,0:04:25.62,0:04:26.87,Subtitle,,0,0,0,,My friends are here.
+Dialogue: 10,0:04:26.87,0:04:28.41,Subtitle,,0,0,0,,Krena the Sword Lord.
+Dialogue: 10,0:04:28.41,0:04:30.28,Subtitle,,0,0,0,,And Dogora the Axe User.
+Dialogue: 10,0:04:31.37,0:04:33.12,Subtitle,,0,0,0,,Let me introduce you.
+Dialogue: 10,0:04:33.12,0:04:37.59,Subtitle,,0,0,0,,These are the children of the Granvelle Family\Nwho I've been serving the past four years.
+Dialogue: 10,0:04:37.59,0:04:41.07,Subtitle,,0,0,0,,Salutations. My name is Cecil Granvelle.
+Dialogue: 10,0:04:41.07,0:04:42.80,Subtitle,,0,0,0,,It's a pleasure to meet your acquaintance.
+Dialogue: 10,0:04:42.80,0:04:44.91,Subtitle,,0,0,0,,Ah, she's flipped her noble switch on.
+Dialogue: 10,0:04:44.91,0:04:48.08,Subtitle,,0,0,0,,She'll be joining us when we take\Nthe entrance exam three days from now.
+Dialogue: 10,0:04:48.08,0:04:49.93,Subtitle,,0,0,0,,G-Great to meet you.
+Dialogue: 10,0:04:49.93,0:04:52.79,Subtitle,,0,0,0,,Lady Cecil! Let's be friends!
+Dialogue: 10,0:04:52.79,0:04:54.35,Subtitle,,0,0,0,,S-Sure.
+Dialogue: 10,0:04:54.35,0:04:57.30,Subtitle,,0,0,0,,Are you two all ready for the exam?
+Dialogue: 10,0:04:57.30,0:04:58.82,Subtitle,,0,0,0,,Yeah, totally!
+Dialogue: 10,0:04:58.82,0:05:02.30,Subtitle,,0,0,0,,We're tough enough to take down Great Boars now!
+Dialogue: 10,0:05:02.30,0:05:04.07,Subtitle,,0,0,0,,Huh? Boars?
+Dialogue: 10,0:05:04.07,0:05:06.78,Subtitle,,0,0,0,,Okay, but it's an academic test, you know.\NHave you been studying?
+Dialogue: 10,0:05:10.92,0:05:14.45,Subtitle,,0,0,0,,My warmest welcome to you, friends of Allen.
+Dialogue: 10,0:05:14.45,0:05:16.11,Subtitle,,0,0,0,,Please make yourselves at home.
+Dialogue: 10,0:05:16.11,0:05:16.91,Subtitle,,0,0,0,,Yessir!
+Dialogue: 10,0:05:17.08,0:05:18.85,Subtitle,,0,0,0,,Down the hatch!
+Dialogue: 10,0:05:25.45,0:05:26.48,Subtitle,,0,0,0,,Yipee!
+Dialogue: 10,0:05:29.92,0:05:32.87,Subtitle,,0,0,0,,Hey! What's the academy like?
+Dialogue: 10,0:05:33.35,0:05:35.29,Subtitle,,0,0,0,,There are dungeons, right?
+Dialogue: 10,0:05:35.29,0:05:37.84,Subtitle,,0,0,0,,Do you think we'll fight a lot of monsters?
+Dialogue: 10,0:05:37.84,0:05:40.36,Subtitle,,0,0,0,,I'm more excited about what happens after graduation.
+Dialogue: 10,0:05:40.80,0:05:43.34,Subtitle,,0,0,0,,I'll be one step closer to my dream\Nof joining the knighthood!
+Dialogue: 10,0:05:43.34,0:05:46.64,Subtitle,,0,0,0,,We're not telling them about the war, right?\NIs that really okay?
+Dialogue: 10,0:05:46.64,0:05:48.82,Subtitle,,0,0,0,,Well, at least not until the time is right.
+Dialogue: 10,0:05:49.68,0:05:52.21,Subtitle,,0,0,0,,They deserve to know about the risk to their lives.
+Dialogue: 10,0:05:53.59,0:05:57.14,Subtitle,,0,0,0,,Krena will supposedly be dubbed a baron\Nafter graduating from the academy,
+Dialogue: 10,0:05:57.14,0:06:00.34,Subtitle,,0,0,0,,which makes her duty bound\Nto join the war effort alongside Cecil.
+Dialogue: 10,0:06:00.34,0:06:03.25,Subtitle,,0,0,0,,As for Dogora, well, that's still up in the air.
+Dialogue: 10,0:06:03.25,0:06:06.41,Subtitle,,0,0,0,,He may get the option to enlist,\Ndepending on his track record after graduating.
+Dialogue: 10,0:06:04.00,0:06:05.45,Subtitle,,0,0,0,,{\an8}So sleepy...
+Dialogue: 10,0:06:07.13,0:06:10.00,Subtitle,,0,0,0,,In any case, we're all attending the Academy together.
+Dialogue: 10,0:06:10.00,0:06:12.27,Subtitle,,0,0,0,,So I hope they make friends with each other.
+Dialogue: 10,0:06:12.27,0:06:17.49,Subtitle,,0,0,0,,Guess I better start praying to Elmea\Nfor the ability to check their stats.
+Dialogue: 10,0:06:22.19,0:06:23.59,Subtitle,,0,0,0,,Goodbye, everyone.
+Dialogue: 10,0:06:23.59,0:06:25.05,Subtitle,,0,0,0,,We're off!
+Dialogue: 10,0:06:25.05,0:06:26.65,Subtitle,,0,0,0,,Thanks for having us!
+Dialogue: 10,0:06:30.83,0:06:31.48,Subtitle,,0,0,0,,Safe travels!
+Dialogue: 10,0:06:31.48,0:06:32.19,Subtitle,,0,0,0,,Be well, Lady Cecil.
+Dialogue: 10,0:06:32.19,0:06:32.77,Subtitle,,0,0,0,,Stay sharp!
+Dialogue: 10,0:06:32.77,0:06:33.29,Subtitle,,0,0,0,,Godspeed!
+Dialogue: 10,0:06:35.82,0:06:39.16,Subtitle,,0,0,0,,And so, the four of us departed for Academy City.
+Dialogue: 10,0:06:37.04,0:06:38.31,Subtitle,,0,0,0,,{\an8}See ya!
+Dialogue: 10,0:06:37.04,0:06:38.31,Subtitle-Alt,,0,0,0,,{\an8}Good luck!
+Dialogue: 10,0:06:44.42,0:06:46.02,Subtitle,,0,0,0,,Hey, guys! Check this out!
+Dialogue: 10,0:06:47.32,0:06:49.57,Subtitle,,0,0,0,,{\an8}What a huge city!
+Dialogue: 10,0:06:51.07,0:06:54.10,Subtitle,,0,0,0,,There are multiple dungeons\Nscattered in and around the city.
+Dialogue: 10,0:06:54.10,0:06:58.33,Subtitle,,0,0,0,,I hear that students can brush up\Non their unique talents at each one.
+Dialogue: 10,0:06:58.33,0:07:00.06,Subtitle,,0,0,0,,I'm itching to get started!
+Dialogue: 10,0:07:00.06,0:07:01.69,Subtitle,,0,0,0,,We're moving so fast!
+Dialogue: 10,0:07:01.69,0:07:05.14,Subtitle,,0,0,0,,This is high quality craftsmanship\Nfrom the dwarves of the Baukis Empire.
+Dialogue: 10,0:07:05.14,0:07:06.65,Subtitle,,0,0,0,,Just how a train should be!
+Dialogue: 10,0:07:10.84,0:07:12.58,Subtitle,,0,0,0,,{\an8}Are all these people here for the test?
+Dialogue: 10,0:07:12.58,0:07:17.08,Subtitle,,0,0,0,,They say about 20,000 hopefuls come from\Nall over the country to take this test every year.
+Dialogue: 10,0:07:17.52,0:07:20.58,Subtitle,,0,0,0,,Welcome to Kingdom of Ratash's Academy City.
+Dialogue: 10,0:07:20.58,0:07:24.96,Subtitle,,0,0,0,,Before the entrance exam,\Nall applicants must undergo an Appraisal Ceremony.
+Dialogue: 10,0:07:24.96,0:07:26.41,Subtitle,,0,0,0,,Appraisal?
+Dialogue: 10,0:07:26.41,0:07:29.42,Subtitle,,0,0,0,,Don't you remember when we turned five?\NIt's the same ceremony.
+Dialogue: 10,0:07:29.42,0:07:31.41,Subtitle,,0,0,0,,Okay, I'll go first.
+Dialogue: 10,0:07:31.41,0:07:33.26,Subtitle,,0,0,0,,Sure. Please step right up.
+Dialogue: 10,0:07:33.26,0:07:34.83,Subtitle,,0,0,0,,Here goes.
+Dialogue: 10,0:07:41.67,0:07:43.63,Subtitle,,0,0,0,,Your attributes have an exceptional rating.
+Dialogue: 10,0:07:43.63,0:07:45.69,Subtitle,,0,0,0,,Please move onto the written exam.
+Dialogue: 10,0:07:45.69,0:07:47.80,Subtitle,,0,0,0,,Everything's the same as when I was five...
+Dialogue: 10,0:07:47.80,0:07:49.89,Subtitle,,0,0,0,,What have I been training my butt off for?
+Dialogue: 10,0:07:49.89,0:07:51.15,Subtitle,,0,0,0,,Don't sweat it.
+Dialogue: 10,0:07:51.15,0:07:54.17,Subtitle,,0,0,0,,Well, those ranks only reflect developmental speed.
+Dialogue: 10,0:07:54.17,0:07:56.67,Subtitle,,0,0,0,,So they don't change based on age or level.
+Dialogue: 10,0:07:56.67,0:07:58.02,Subtitle,,0,0,0,,I'll go next.
+Dialogue: 10,0:08:03.54,0:08:05.40,Subtitle,,0,0,0,,These results are also impressive.
+Dialogue: 10,0:08:05.40,0:08:08.15,Subtitle,,0,0,0,,Your attributes and talent are just what we're looking for.
+Dialogue: 10,0:08:08.88,0:08:12.09,Subtitle,,0,0,0,,She's got S-rank intelligence. That's a Wizardess for you!
+Dialogue: 10,0:08:18.47,0:08:20.08,Subtitle,,0,0,0,,My goodness!
+Dialogue: 10,0:08:20.08,0:08:23.22,Subtitle,,0,0,0,,You're Krena the Sword Lord!\NWe're glad to have you here!
+Dialogue: 10,0:08:23.22,0:08:25.93,Subtitle,,0,0,0,,Nothing's changed since I was five years old...
+Dialogue: 10,0:08:25.93,0:08:27.69,Subtitle,,0,0,0,,Don't sweat it.
+Dialogue: 10,0:08:27.69,0:08:29.68,Subtitle,,0,0,0,,All right. You with the dark hair, please go ahead.
+Dialogue: 10,0:08:29.68,0:08:33.28,Subtitle,,0,0,0,,I've been waiting for this, Allen. Let's see what you've got.
+Dialogue: 10,0:08:43.81,0:08:44.62,Subtitle,,0,0,0,,What?
+Dialogue: 10,0:08:44.90,0:08:47.11,Subtitle,,0,0,0,,Every attribute is ranked E?!
+Dialogue: 10,0:08:47.11,0:08:49.05,Subtitle,,0,0,0,,I-I'm afraid that you fail...
+Dialogue: 10,0:08:50.84,0:08:54.70,Subtitle,,0,0,0,,His talent didn't show up when we were kids.\NSo he was a Summoner?
+Dialogue: 10,0:08:54.70,0:08:56.15,Subtitle,,0,0,0,,What is that, anyways?
+Dialogue: 10,0:08:56.80,0:09:00.88,Subtitle,,0,0,0,,The text glitch got fixed, but my development\Nspeed is still dragged down by Hell Mode...
+Dialogue: 10,0:09:00.88,0:09:02.08,Subtitle,,0,0,0,,Should've figured.
+Dialogue: 10,0:09:02.08,0:09:05.54,Subtitle,,0,0,0,,W-Wait, Allen failed?!\NThat doesn't make any sense!
+Dialogue: 10,0:09:05.54,0:09:09.26,Subtitle,,0,0,0,,It's okay. There are still things for me\Nto do here, even if I don't enroll in the academy.
+Dialogue: 10,0:09:09.26,0:09:10.65,Subtitle,,0,0,0,,Don't be ridiculous, you dummy!
+Dialogue: 10,0:09:10.65,0:09:12.59,Subtitle,,0,0,0,,Yeah! This isn't right!
+Dialogue: 10,0:09:12.59,0:09:14.78,Subtitle,,0,0,0,,What's all the fuss about?
+Dialogue: 10,0:09:17.90,0:09:19.90,Subtitle,,0,0,0,,Oh! An elf!
+Dialogue: 10,0:09:19.90,0:09:21.45,Subtitle,,0,0,0,,These results have to be wrong!
+Dialogue: 10,0:09:21.45,0:09:24.50,Subtitle,,0,0,0,,I should know, I saw Allen\Nsingle-handedly beat a Murdergalsh!
+Dialogue: 10,0:09:24.50,0:09:27.66,Subtitle,,0,0,0,,Wow. He took down a Murdergalsh at his young age?
+Dialogue: 10,0:09:27.66,0:09:30.13,Subtitle,,0,0,0,,Yet all his attributes are ranked E.
+Dialogue: 10,0:09:30.13,0:09:33.66,Subtitle,,0,0,0,,I've never seen this kind of result before.
+Dialogue: 10,0:09:33.66,0:09:35.21,Subtitle,,0,0,0,,So, he really does exist.
+Dialogue: 10,0:09:35.66,0:09:38.17,Subtitle,,0,0,0,,What does that mean?
+Dialogue: 10,0:09:38.17,0:09:41.63,Subtitle,,0,0,0,,"A boy entirely ranked E shall appear."
+Dialogue: 10,0:09:41.63,0:09:43.83,Subtitle,,0,0,0,,Just as Master Rohzen prophesized.
+Dialogue: 10,0:09:43.83,0:09:47.17,Subtitle,,0,0,0,,Didn't Rohzen say something else, Headmaster?
+Dialogue: 10,0:09:47.17,0:09:48.39,Subtitle,,0,0,0,,Sir Helmios.
+Dialogue: 10,0:09:48.39,0:09:49.80,Subtitle,,0,0,0,,{\an8}Headmaster?!
+Dialogue: 10,0:09:48.39,0:09:53.40,Subtitle,,0,0,0,,I must ask that you address our god,\Nthe Sovereign of Spirits, with more respect.
+Dialogue: 10,0:09:49.80,0:09:51.09,Subtitle,,0,0,0,,{\an8}Helmios?!
+Dialogue: 10,0:09:51.55,0:09:53.40,Subtitle,,0,0,0,,{\an8}We heard that name during our lecture\Non the Demon Lord.
+Dialogue: 10,0:09:53.53,0:09:57.40,Subtitle,,0,0,0,,Helmios, the Hero and hope of all mankind!
+Dialogue: 10,0:09:57.90,0:09:59.74,Subtitle,,0,0,0,,But why would he be here?
+Dialogue: 10,0:10:03.15,0:10:03.83,Subtitle,,0,0,0,,What's he doing?
+Dialogue: 10,0:10:05.77,0:10:07.69,Subtitle,,0,0,0,,His attack is at 570.
+Dialogue: 10,0:10:07.69,0:10:11.49,Subtitle,,0,0,0,,Oh, wow! His MP and intelligence\Nare all the way at 1,600.
+Dialogue: 10,0:10:11.49,0:10:14.13,Subtitle,,0,0,0,,What? He can see my stats?!
+Dialogue: 10,0:10:14.13,0:10:15.99,Subtitle,,0,0,0,,He must be using an Appraisal skill.
+Dialogue: 10,0:10:15.99,0:10:17.74,Subtitle,,0,0,0,,Quit telling the whole world, you blabbermouth!
+Dialogue: 10,0:10:17.74,0:10:20.66,Subtitle,,0,0,0,,In terms of attributes,\Nhe's about on par with an Archwizard.
+Dialogue: 10,0:10:20.66,0:10:22.33,Subtitle,,0,0,0,,But he doesn't have any magic skills.
+Dialogue: 10,0:10:22.33,0:10:23.46,Subtitle,,0,0,0,,Talk about weird!
+Dialogue: 10,0:10:23.46,0:10:24.97,Subtitle,,0,0,0,,Excuse me for existing!
+Dialogue: 10,0:10:24.97,0:10:28.50,Subtitle,,0,0,0,,Sorry. Looks like the Appraisal plate\Nwasn't working properly.
+Dialogue: 10,0:10:28.50,0:10:31.44,Subtitle,,0,0,0,,R-Really? Does that mean he can take the exam?
+Dialogue: 10,0:10:31.44,0:10:34.15,Subtitle,,0,0,0,,Sure! On one condition.
+Dialogue: 10,0:10:34.47,0:10:37.72,Subtitle,,0,0,0,,You have to show me what you can do\Nwith your Summoner talent. Deal?
+Dialogue: 10,0:10:37.72,0:10:39.09,Subtitle,,0,0,0,,Allen! Summon one o—
+Dialogue: 10,0:10:39.09,0:10:40.62,Subtitle,,0,0,0,,I'm afraid I must decline.
+Dialogue: 10,0:10:40.62,0:10:41.22,Subtitle,,0,0,0,,Oh?
+Dialogue: 10,0:10:41.22,0:10:43.95,Subtitle,,0,0,0,,I have no idea who you are, for one.
+Dialogue: 10,0:10:43.95,0:10:45.62,Subtitle,,0,0,0,,Ah, my apologies.
+Dialogue: 10,0:10:45.90,0:10:47.94,Subtitle,,0,0,0,,I'm Helmios.
+Dialogue: 10,0:10:47.94,0:10:49.56,Subtitle,,0,0,0,,And heroing is my deal.
+Dialogue: 10,0:10:50.08,0:10:51.54,Subtitle,,0,0,0,,Hero?
+Dialogue: 10,0:10:51.54,0:10:53.49,Subtitle,,0,0,0,,Can't say I've heard of you.
+Dialogue: 10,0:10:53.49,0:10:55.76,Subtitle,,0,0,0,,But given that you've taken a look at my attributes,
+Dialogue: 10,0:10:56.16,0:10:59.28,Subtitle,,0,0,0,,it only seems fair that you show me yours\Nwith that crystal ball.
+Dialogue: 10,0:10:59.28,0:11:01.24,Subtitle,,0,0,0,,Then I'll consider us even.
+Dialogue: 10,0:11:01.24,0:11:02.47,Subtitle,,0,0,0,,Sure, why not.
+Dialogue: 10,0:11:02.92,0:11:05.68,Subtitle,,0,0,0,,Yes! Data on Hero that I can scrutinize!
+Dialogue: 10,0:11:11.01,0:11:12.51,Subtitle,,0,0,0,,Wow!
+Dialogue: 10,0:11:12.51,0:11:13.96,Subtitle,,0,0,0,,Amazing!
+Dialogue: 10,0:11:14.69,0:11:17.34,Subtitle,,0,0,0,,Hm. Nothing but A and S ranks.
+Dialogue: 10,0:11:17.34,0:11:19.65,Subtitle,,0,0,0,,Seems like he's mostly specced for physical attacks.
+Dialogue: 10,0:11:20.01,0:11:22.91,Subtitle,,0,0,0,,And there you have it. Now it's your turn.
+Dialogue: 10,0:11:22.91,0:11:25.25,Subtitle,,0,0,0,,All right. Here.
+Dialogue: 10,0:11:25.25,0:11:27.21,Subtitle,,0,0,0,,Come on out, Mousey!
+Dialogue: 10,0:11:29.37,0:11:31.77,Subtitle,,0,0,0,,It just popped outta nowhere! How cute!
+Dialogue: 10,0:11:31.77,0:11:33.96,Subtitle,,0,0,0,,You guys are impressed? Seriously?
+Dialogue: 10,0:11:34.24,0:11:36.49,Subtitle,,0,0,0,,This is my talent.
+Dialogue: 10,0:11:36.49,0:11:38.67,Subtitle,,0,0,0,,The name Summoner makes sense now.
+Dialogue: 10,0:11:38.67,0:11:42.53,Subtitle,,0,0,0,,So I pass the screening process as we agreed, yes?
+Dialogue: 10,0:11:42.53,0:11:43.94,Subtitle,,0,0,0,,If you'll please excuse me.
+Dialogue: 10,0:11:45.92,0:11:47.64,Subtitle,,0,0,0,,Hey, Allen!
+Dialogue: 10,0:11:47.64,0:11:49.79,Subtitle,,0,0,0,,That's no way to talk to Sir Helmios!
+Dialogue: 10,0:11:49.79,0:11:52.13,Subtitle,,0,0,0,,{\an8}Oh, please. Don't pretend\Nyou didn't give him some lip yourself, milady.
+Dialogue: 10,0:11:51.50,0:11:53.67,Subtitle,,0,0,0,,Pretty kooky kid, huh?
+Dialogue: 10,0:11:52.13,0:11:54.46,Subtitle,,0,0,0,,{\an8}Yeah, but I didn't know it was him!
+Dialogue: 10,0:11:53.67,0:11:55.04,Subtitle,,0,0,0,,You're one to talk.
+Dialogue: 10,0:11:56.01,0:11:59.68,Subtitle,,0,0,0,,The written test covered basic subjects\Nlike math, vocabulary, and history,
+Dialogue: 10,0:11:59.68,0:12:03.68,Subtitle,,0,0,0,,but also had questions that gauged our ability\Nto deal with different types of monsters.
+Dialogue: 10,0:12:03.68,0:12:04.79,Subtitle,,0,0,0,,The results were...
+Dialogue: 10,0:12:04.79,0:12:07.75,Subtitle,,0,0,0,,I got a B! All right!
+Dialogue: 10,0:12:07.75,0:12:09.45,Subtitle,,0,0,0,,Allen! You got an S!
+Dialogue: 10,0:12:09.45,0:12:11.50,Subtitle,,0,0,0,,And you barely got a C.
+Dialogue: 10,0:12:11.81,0:12:13.31,Subtitle,,0,0,0,,So everybody passed.
+Dialogue: 10,0:12:13.31,0:12:15.46,Subtitle,,0,0,0,,Why did I get an A?
+Dialogue: 10,0:12:15.46,0:12:19.32,Subtitle,,0,0,0,,Please line up here to receive your uniforms!
+Dialogue: 10,0:12:19.32,0:12:21.42,Subtitle,,0,0,0,,We're all officially students now!
+Dialogue: 10,0:12:21.74,0:12:26.08,Subtitle,,0,0,0,,Where do you think we should live?\NWe have the option of staying at the dorms.
+Dialogue: 10,0:12:26.08,0:12:28.35,Subtitle,,0,0,0,,I think we should rent a house instead.
+Dialogue: 10,0:12:28.35,0:12:32.17,Subtitle,,0,0,0,,But before that, I heard that students\Nneed to apply for adventurer cards.
+Dialogue: 10,0:12:32.17,0:12:34.36,Subtitle,,0,0,0,,So let's go to the Adventurer's Guild.
+Dialogue: 10,0:12:34.72,0:12:39.84,Subtitle,,0,0,0,,While we get your cards printed,\NI will explain how dungeons work around here.
+Dialogue: 10,0:12:39.84,0:12:41.03,Subtitle,,0,0,0,,Thank you.
+Dialogue: 10,0:12:41.03,0:12:44.55,Subtitle,,0,0,0,,The dungeons accessible from this city\Nare separated by difficulty.
+Dialogue: 10,0:12:44.55,0:12:47.45,Subtitle,,0,0,0,,There are three ranks: C, B, and A.
+Dialogue: 10,0:12:47.45,0:12:51.93,Subtitle,,0,0,0,,The bottom floor of each dungeon\Nhas a treasure chest guarded by a boss monster.
+Dialogue: 10,0:12:51.93,0:12:56.00,Subtitle,,0,0,0,,It may contain a rare item, so do your best to get one!
+Dialogue: 10,0:12:56.00,0:12:59.80,Subtitle,,0,0,0,,Rare items, huh? I already know\Nexactly which one I want.
+Dialogue: 10,0:12:59.80,0:13:01.62,Subtitle,,0,0,0,,Any questions so far?
+Dialogue: 10,0:13:01.62,0:13:02.57,Subtitle,,0,0,0,,Yes, actually!
+Dialogue: 10,0:13:02.57,0:13:05.62,Subtitle,,0,0,0,,Is it possible for me to put in a request\Nwith the guild for some D-rank magic stones?
+Dialogue: 10,0:13:05.62,0:13:07.60,Subtitle,,0,0,0,,Yes, how many would you like?
+Dialogue: 10,0:13:08.04,0:13:10.71,Subtitle,,0,0,0,,I'll offer a hundred gold coins for 10,000 of them.
+Dialogue: 10,0:13:10.71,0:13:12.14,Subtitle,,0,0,0,,Can you do that?
+Dialogue: 10,0:13:12.14,0:13:14.04,Subtitle,,0,0,0,,V-Very well.
+Dialogue: 10,0:13:14.04,0:13:16.58,Subtitle,,0,0,0,,Please come back in a week.
+Dialogue: 10,0:13:16.58,0:13:17.86,Subtitle,,0,0,0,,Sounds great!
+Dialogue: 10,0:13:17.86,0:13:22.57,Subtitle,,0,0,0,,I'd like to stock up on at least two million\Nof them during my three years at the academy.
+Dialogue: 10,0:13:22.89,0:13:25.40,Subtitle,,0,0,0,,Okay. Your adventurer cards are ready.
+Dialogue: 10,0:13:25.76,0:13:28.49,Subtitle,,0,0,0,,You'll have to start from E-rank.
+Dialogue: 10,0:13:28.49,0:13:30.34,Subtitle,,0,0,0,,Wow!
+Dialogue: 10,0:13:30.34,0:13:34.87,Subtitle,,0,0,0,,If you plan on adventuring together,\Nwould you like to register as a party now?
+Dialogue: 10,0:13:34.87,0:13:36.45,Subtitle,,0,0,0,,Yes! We would!
+Dialogue: 10,0:13:36.45,0:13:37.87,Subtitle,,0,0,0,,Our name will be...
+Dialogue: 10,0:13:38.48,0:13:39.94,Subtitle,,0,0,0,,The No-Life Gamers!
+Dialogue: 10,0:13:40.59,0:13:42.24,Subtitle,,0,0,0,,"No-Life Gamers"?
+Dialogue: 10,0:13:42.24,0:13:43.63,Subtitle,,0,0,0,,What does that mean?
+Dialogue: 10,0:13:43.63,0:13:46.37,Subtitle,,0,0,0,,"No-Life Gamer" is a title for people
+Dialogue: 10,0:13:46.37,0:13:50.42,Subtitle,,0,0,0,,who go hardcore and devote all of their time\Nto becoming the strongest they can be.
+Dialogue: 10,0:13:50.42,0:13:52.08,Subtitle,,0,0,0,,Wow! I like it!
+Dialogue: 10,0:13:52.08,0:13:53.27,Subtitle,,0,0,0,,That's so cool!
+Dialogue: 10,0:13:54.00,0:13:56.25,Subtitle,,0,0,0,,I had to balance gaming with work in my previous life.
+Dialogue: 10,0:13:56.25,0:13:59.07,Subtitle,,0,0,0,,So I never was a true "No-Life" gamer.
+Dialogue: 10,0:13:59.43,0:14:01.03,Subtitle,,0,0,0,,But things are different here!
+Dialogue: 10,0:14:01.55,0:14:03.75,Subtitle,,0,0,0,,I can be the GOAT!
+Dialogue: 10,0:14:10.95,0:14:12.17,Subtitle,,0,0,0,,How huge!
+Dialogue: 10,0:14:12.17,0:14:14.41,Subtitle,,0,0,0,,It's like ten times my house back home...
+Dialogue: 10,0:14:14.41,0:14:19.83,Subtitle,,0,0,0,,This is normal in Academy City. People form\Nparties of 10 or 20 and all live together.
+Dialogue: 10,0:14:20.15,0:14:22.07,Subtitle,,0,0,0,,So the houses need to be big.
+Dialogue: 10,0:14:23.07,0:14:28.13,Subtitle,,0,0,0,,Now that we're settled in...\Nthere's something we need to talk about with you two.
+Dialogue: 10,0:14:28.41,0:14:31.10,Subtitle,,0,0,0,,Lady Cecil and I have a long term goal.
+Dialogue: 10,0:14:31.10,0:14:34.37,Subtitle,,0,0,0,,It's something we have to do after graduating\Nfrom the academy in three years.
+Dialogue: 10,0:14:37.63,0:14:38.75,Subtitle,,0,0,0,,Demon Lord...
+Dialogue: 10,0:14:38.75,0:14:41.64,Subtitle,,0,0,0,,So that Hero guy is really strong, huh?
+Dialogue: 10,0:14:41.64,0:14:44.53,Subtitle,,0,0,0,,I never imagined the academy\Nwas meant to recruit soldiers for war.
+Dialogue: 10,0:14:44.53,0:14:48.30,Subtitle,,0,0,0,,I'm going to fight alongside Lady Cecil\Nand defeat the Demon Lord.
+Dialogue: 10,0:14:48.30,0:14:49.98,Subtitle,,0,0,0,,Huh? Wh-Wh-Wh-What?
+Dialogue: 10,0:14:49.98,0:14:52.19,Subtitle,,0,0,0,,All right! Count me in!
+Dialogue: 10,0:14:52.19,0:14:53.45,Subtitle,,0,0,0,,I'll fight with you!
+Dialogue: 10,0:14:53.45,0:14:56.82,Subtitle,,0,0,0,,Thank you! I was hoping you'd say that.
+Dialogue: 10,0:14:56.82,0:14:57.99,Subtitle,,0,0,0,,How about you, Dogora?
+Dialogue: 10,0:14:57.99,0:14:58.66,Subtitle,,0,0,0,,Huh?
+Dialogue: 10,0:14:58.66,0:15:01.77,Subtitle,,0,0,0,,They say half of those who go to the frontlines\Nnever come back alive.
+Dialogue: 10,0:15:01.77,0:15:03.63,Subtitle,,0,0,0,,Take some time to think it over.
+Dialogue: 10,0:15:04.62,0:15:09.37,Subtitle,,0,0,0,,Whoever takes down the Demon Lord\Nwould be more exalted than a knight, yeah?
+Dialogue: 10,0:15:09.37,0:15:10.63,Subtitle,,0,0,0,,I'd say so.
+Dialogue: 10,0:15:12.18,0:15:15.43,Subtitle,,0,0,0,,Sounds like a hell of a job. Sign me up!
+Dialogue: 10,0:15:20.14,0:15:21.38,Subtitle,,0,0,0,,What is that?!
+Dialogue: 10,0:15:21.38,0:15:23.11,Subtitle,,0,0,0,,A floating book?
+Dialogue: 10,0:15:23.11,0:15:25.09,Subtitle,,0,0,0,,Hold on, you guys can see this?
+Dialogue: 10,0:15:25.09,0:15:28.18,Subtitle,,0,0,0,,Yeah. Is that part of your talent?
+Dialogue: 10,0:15:28.18,0:15:28.98,Subtitle,,0,0,0,,Mm-hmm.
+Dialogue: 10,0:15:29.43,0:15:31.34,Subtitle,,0,0,0,,We're all in this together now!
+Dialogue: 10,0:15:33.60,0:15:37.16,Subtitle,,0,0,0,,So, how should we start preparing\Nto beat the Demon Lord?
+Dialogue: 10,0:15:37.16,0:15:39.34,Subtitle,,0,0,0,,There's a whole list of things to do.
+Dialogue: 10,0:15:39.34,0:15:42.24,Subtitle,,0,0,0,,We pass trials to become stronger\Nwhile clearing dungeons.
+Dialogue: 10,0:15:42.24,0:15:43.58,Subtitle,,0,0,0,,And get better equipment.
+Dialogue: 10,0:15:43.58,0:15:47.49,Subtitle,,0,0,0,,Ideally, I'd also like to add a Cleric\Nwho can heal to our party.
+Dialogue: 10,0:15:47.49,0:15:50.16,Subtitle,,0,0,0,,Oh, and on a personal note,\Nthere's one more thing I need to share...
+Dialogue: 10,0:15:50.16,0:15:51.09,Subtitle,,0,0,0,,Huh?
+Dialogue: 10,0:15:51.09,0:15:54.51,Subtitle,,0,0,0,,My skills actually develop\Na hundred times slower than normal.
+Dialogue: 10,0:15:54.78,0:15:55.79,Subtitle,,0,0,0,,A hundred times?!
+Dialogue: 10,0:15:55.79,0:16:00.22,Subtitle,,0,0,0,,So I need a big stock of magic stones\Nand MP to pass my trials.
+Dialogue: 10,0:16:00.22,0:16:05.69,Subtitle,,0,0,0,,Ultimately, I'm hoping to find an MP recovery ring\Nin one of the dungeon treasure chests.
+Dialogue: 10,0:16:05.69,0:16:08.69,Subtitle,,0,0,0,,That explains why you put\Nin a request for all those stones...
+Dialogue: 10,0:16:08.69,0:16:11.26,Subtitle,,0,0,0,,Anyways, things are about to get really busy!
+Dialogue: 10,0:16:11.26,0:16:12.59,Subtitle,,0,0,0,,I'm counting on you guys!
+Dialogue: 10,0:16:12.59,0:16:13.84,Subtitle,,0,0,0,,Okay!
+Dialogue: 10,0:16:13.84,0:16:15.45,Subtitle,,0,0,0,,Make way for...
+Dialogue: 10,0:16:15.45,0:16:17.37,Subtitle,,0,0,0,,...the No-Life Gamers!
+Dialogue: 10,0:16:19.87,0:16:24.33,Subtitle,,0,0,0,,Ahem. My name's Carlova and I'll be\Nyour homeroom teacher for the next three years.
+Dialogue: 10,0:16:24.33,0:16:27.74,Subtitle,,0,0,0,,I'm guildmaster of the Adventurer's Guild\Nin the royal capital.
+Dialogue: 10,0:16:27.74,0:16:32.67,Subtitle,,0,0,0,,My talent is Sword Master. I was called upon\Nsince we have a Sword Lord joining this year.
+Dialogue: 10,0:16:32.67,0:16:35.07,Subtitle,,0,0,0,,You've got big tests in July and February.
+Dialogue: 10,0:16:35.07,0:16:38.74,Subtitle,,0,0,0,,Any score less than 40 is apparently an F,\Nso you better study hard.
+Dialogue: 10,0:16:39.25,0:16:39.96,Subtitle,,0,0,0,,Got that?
+Dialogue: 10,0:16:39.96,0:16:40.50,Subtitle,,0,0,0,,Yessir.
+Dialogue: 10,0:16:40.50,0:16:41.88,Subtitle,,0,0,0,,This guy is totally winging it.
+Dialogue: 10,0:16:41.88,0:16:43.14,Subtitle,,0,0,0,,One more thing.
+Dialogue: 10,0:16:43.14,0:16:46.76,Subtitle,,0,0,0,,The student body here includes serfs,\Ncommoners, and nobles.
+Dialogue: 10,0:16:46.76,0:16:48.98,Subtitle,,0,0,0,,But the only thing that really matters is talent.
+Dialogue: 10,0:16:48.98,0:16:51.68,Subtitle,,0,0,0,,So we're throwing all honorifics and titles out the window.
+Dialogue: 10,0:16:51.68,0:16:53.47,Subtitle,,0,0,0,,Just forget your social status.
+Dialogue: 10,0:16:53.47,0:16:54.69,Subtitle,,0,0,0,,What?
+Dialogue: 10,0:16:55.01,0:16:56.08,Subtitle,,0,0,0,,Hear that?
+Dialogue: 10,0:16:56.08,0:16:59.04,Subtitle,,0,0,0,,No more fancy-schmancy talk from me, Cecil.
+Dialogue: 10,0:16:59.47,0:17:02.52,Subtitle,,0,0,0,,You made that change a little too quickly\Nfor my liking, mister!
+Dialogue: 10,0:17:02.52,0:17:03.00,Subtitle,,0,0,0,,See?
+Dialogue: 10,0:17:03.00,0:17:05.22,Subtitle,,0,0,0,,Those two are setting a good example already.
+Dialogue: 10,0:17:08.65,0:17:12.13,Subtitle,,0,0,0,,At the academy, we have four days of classes\Nand two days off a week.
+Dialogue: 10,0:17:12.45,0:17:15.12,Subtitle,,0,0,0,,The afternoon classes are tailored to our talents,
+Dialogue: 10,0:17:15.12,0:17:17.58,Subtitle,,0,0,0,,which means there aren't any for Summoner.
+Dialogue: 10,0:17:17.58,0:17:20.06,Subtitle,,0,0,0,,So I got permission to use that time freely.
+Dialogue: 10,0:17:20.71,0:17:23.08,Subtitle,,0,0,0,,I plan to take part in a little of every class.
+Dialogue: 10,0:17:24.42,0:17:26.66,Subtitle,,0,0,0,,Soon enough, our first day off arrived.
+Dialogue: 10,0:17:27.59,0:17:30.43,Subtitle,,0,0,0,,Is this really the entrance to a dungeon?
+Dialogue: 10,0:17:30.43,0:17:32.94,Subtitle,,0,0,0,,It's just smack dab in the middle of town.
+Dialogue: 10,0:17:32.94,0:17:33.84,Subtitle,,0,0,0,,Hooray a dungeon!
+Dialogue: 10,0:17:33.84,0:17:35.84,Subtitle,,0,0,0,,Yeah! Dungeons rule!
+Dialogue: 10,0:17:35.84,0:17:37.97,Subtitle,,0,0,0,,Why are you two so happy about this?
+Dialogue: 10,0:17:38.81,0:17:40.10,Subtitle,,0,0,0,,Is this it?
+Dialogue: 10,0:17:40.10,0:17:41.95,Subtitle,,0,0,0,,That's what the receptionist said.
+Dialogue: 10,0:17:41.95,0:17:45.12,Subtitle,,0,0,0,,So far, it just seems like a normal building.
+Dialogue: 10,0:17:45.12,0:17:46.72,Subtitle,,0,0,0,,Whatever. Let's go inside!
+Dialogue: 10,0:17:52.78,0:17:55.57,Subtitle,,0,0,0,,You must be the "No-Life Gamer" party.
+Dialogue: 10,0:17:55.57,0:17:57.91,Subtitle,,0,0,0,,Welcome to the C-rank dungeon.
+Dialogue: 10,0:17:57.91,0:18:03.39,Subtitle,,0,0,0,,I am the Dungeon General Operation System C205.
+Dialogue: 10,0:18:03.39,0:18:07.58,Subtitle,,0,0,0,,I will now direct you to another dimension\Nwhere the dungeon is located.
+Dialogue: 10,0:18:07.58,0:18:08.64,Subtitle,,0,0,0,,Dimension?
+Dialogue: 10,0:18:08.64,0:18:11.72,Subtitle,,0,0,0,,All travel through the dungeon\Nis separated by isolated rooms,
+Dialogue: 10,0:18:11.72,0:18:14.11,Subtitle,,0,0,0,,therefore other adventurers cannot enter yours.
+Dialogue: 10,0:18:14.86,0:18:16.32,Subtitle,,0,0,0,,THEY HAVE INSTANCING!
+Dialogue: 10,0:18:16.32,0:18:17.05,Subtitle,,0,0,0,,Huh?
+Dialogue: 10,0:18:17.05,0:18:17.59,Subtitle,,0,0,0,,Wh-What's going on?
+Dialogue: 10,0:18:17.59,0:18:19.51,Subtitle,,0,0,0,,It means we'll be isolated from the rest of the sever!
+Dialogue: 10,0:18:19.51,0:18:22.04,Subtitle,,0,0,0,,So I don't have to worry about anyone else\Nseeing my Summoner skills!
+Dialogue: 10,0:18:22.04,0:18:24.13,Subtitle,,0,0,0,,What's Allen blabbing on about?
+Dialogue: 10,0:18:22.04,0:18:24.71,Subtitle,,0,0,0,,{\an8}Do you have any questions?
+Dialogue: 10,0:18:24.13,0:18:26.28,Subtitle,,0,0,0,,I think he might have gone crazy...
+Dialogue: 10,0:18:24.71,0:18:26.28,Subtitle,,0,0,0,,{\an8}Yes, I do!
+Dialogue: 10,0:18:26.28,0:18:28.12,Subtitle,,0,0,0,,Or maybe he was always crazy.
+Dialogue: 10,0:18:28.37,0:18:31.62,Subtitle,,0,0,0,,Without further ado,\NI will now direct you to the dungeon.
+Dialogue: 10,0:18:31.62,0:18:33.71,Subtitle,,0,0,0,,May fortune smile upon you.
+Dialogue: 10,0:18:34.07,0:18:35.48,Subtitle,,0,0,0,,Awesome. Let's go!
+Dialogue: 10,0:18:39.51,0:18:41.67,Subtitle,,0,0,0,,This place is like a maze.
+Dialogue: 10,0:18:41.67,0:18:43.72,Subtitle,,0,0,0,,It must be a labyrinth dungeon.
+Dialogue: 10,0:18:43.72,0:18:45.43,Subtitle,,0,0,0,,Hawkins, do your thing!
+Dialogue: 10,0:18:48.75,0:18:50.55,Subtitle,,0,0,0,,That's really convenient!
+Dialogue: 10,0:18:50.55,0:18:54.86,Subtitle,,0,0,0,,The monsters here are all lower rank,\Nso let's not waste time beating any more than necessary.
+Dialogue: 10,0:18:54.86,0:18:57.22,Subtitle,,0,0,0,,We should ignore the treasure chests, too.
+Dialogue: 10,0:18:57.22,0:18:59.32,Subtitle,,0,0,0,,They're not worth much and might be boobytrapped.
+Dialogue: 10,0:18:59.32,0:19:03.60,Subtitle,,0,0,0,,I want to conquer the C-rank dungeon\Nas fast as possible, so we can move on to B-rank.
+Dialogue: 10,0:19:03.60,0:19:04.54,Subtitle,,0,0,0,,Okay!
+Dialogue: 10,0:19:03.60,0:19:04.54,Subtitle-Alt,,0,0,0,,Roger that!
+Dialogue: 10,0:19:04.54,0:19:07.75,Subtitle,,0,0,0,,Alrighty. Let me take a look at everyone's stats.
+Dialogue: 10,0:19:14.91,0:19:16.37,Subtitle,,0,0,0,,There he goes again...
+Dialogue: 10,0:19:16.37,0:19:18.57,Subtitle,,0,0,0,,Cecil! Enemy dead ahead! It's a slime!
+Dialogue: 10,0:19:18.57,0:19:19.09,Subtitle,,0,0,0,,Huh?
+Dialogue: 10,0:19:20.46,0:19:20.46,Subtitle,,0,0,0,,I see it!
+Dialogue: 10,0:19:20.87,0:19:21.84,Subtitle,,0,0,0,,Gloopity-glop!
+Dialogue: 10,0:19:24.35,0:19:25.89,Subtitle,,0,0,0,,Fireball!
+Dialogue: 10,0:19:31.46,0:19:32.02,Subtitle,,0,0,0,,I did it!
+Dialogue: 10,0:19:32.29,0:19:34.26,Subtitle,,0,0,0,,I defeated my first monster!
+Dialogue: 10,0:19:34.26,0:19:36.48,Subtitle,,0,0,0,,Nicely done! Keep it up!
+Dialogue: 10,0:19:36.48,0:19:38.30,Subtitle,,0,0,0,,She's so lucky! Wish I had magic.
+Dialogue: 10,0:19:38.30,0:19:39.44,Subtitle,,0,0,0,,Badass.
+Dialogue: 10,0:19:39.44,0:19:42.57,Subtitle,,0,0,0,,You two have your own skills. Take a look.
+Dialogue: 10,0:19:42.57,0:19:44.23,Subtitle,,0,0,0,,Mine is "Slash"?
+Dialogue: 10,0:19:44.23,0:19:45.73,Subtitle,,0,0,0,,"Full Might"?
+Dialogue: 10,0:19:45.73,0:19:47.29,Subtitle,,0,0,0,,I dunno how it works.
+Dialogue: 10,0:19:47.29,0:19:50.87,Subtitle,,0,0,0,,Well, I'm sure you'll learn more at the academy.\NEverybody starts somewhere.
+Dialogue: 10,0:19:51.86,0:19:54.93,Subtitle,,0,0,0,,So, the corpse disappears and just leaves\Na magic stone behind, huh?
+Dialogue: 10,0:19:55.41,0:19:59.34,Subtitle,,0,0,0,,I do want to gather some E-rank stones\Nto make my "Leaf of Life" healing item, but...
+Dialogue: 10,0:19:59.82,0:20:01.95,Subtitle,,0,0,0,,{\an8}I should leave that job to Chappy.
+Dialogue: 10,0:19:59.82,0:20:01.95,Subtitle,,0,0,0,,What's Allen blabbing on about?
+Dialogue: 10,0:20:01.95,0:20:04.23,Subtitle,,0,0,0,,We better get used to not knowing.
+Dialogue: 10,0:20:01.95,0:20:03.28,Subtitle,,0,0,0,,{\an8}It's just more efficient.
+Dialogue: 10,0:20:03.28,0:20:05.14,Subtitle,,0,0,0,,{\an8}Yeah, that's the best way!
+Dialogue: 10,0:20:05.14,0:20:07.27,Subtitle,,0,0,0,,Okay! Let's keep moving!
+Dialogue: 10,0:20:09.50,0:20:10.89,Subtitle,,0,0,0,,Croaky-croak!
+Dialogue: 10,0:20:10.89,0:20:11.89,Subtitle,,0,0,0,,Hiyah!
+Dialogue: 10,0:20:13.10,0:20:14.94,Subtitle,,0,0,0,,Croaky-croaky-croak!
+Dialogue: 10,0:20:18.34,0:20:20.47,Subtitle,,0,0,0,,What's going on? I feel a rush of energy!
+Dialogue: 10,0:20:20.47,0:20:22.25,Subtitle,,0,0,0,,You passed a Trial of the Gods!
+Dialogue: 10,0:20:25.10,0:20:26.44,Subtitle,,0,0,0,,Bingo!
+Dialogue: 10,0:20:26.44,0:20:28.79,Subtitle,,0,0,0,,Now we can go to the next floor, huh?
+Dialogue: 10,0:20:28.79,0:20:33.50,Subtitle,,0,0,0,,I am the Dungeon General Operation System C328-01.
+Dialogue: 10,0:20:33.50,0:20:38.26,Subtitle,,0,0,0,,Are you ready to leave the dungeon?\NOr will you proceed to the next floor?
+Dialogue: 10,0:20:38.26,0:20:39.99,Subtitle,,0,0,0,,Can we still leave if we choose to keep going?
+Dialogue: 10,0:20:39.99,0:20:45.70,Subtitle,,0,0,0,,You will find the Dungeon General\NOperation System C328-02 on the next floor.
+Dialogue: 10,0:20:45.70,0:20:47.92,Subtitle,,0,0,0,,You can leave through them.
+Dialogue: 10,0:20:47.92,0:20:49.97,Subtitle,,0,0,0,,Okay, then we'd like to keep going!
+Dialogue: 10,0:20:49.97,0:20:51.93,Subtitle,,0,0,0,,As you wish.
+Dialogue: 10,0:20:56.15,0:20:57.80,Subtitle,,0,0,0,,Did the room just change?
+Dialogue: 10,0:20:57.80,0:20:59.11,Subtitle,,0,0,0,,Welcome!
+Dialogue: 10,0:20:59.11,0:21:03.14,Subtitle,,0,0,0,,I am the Dungeon General Operation System C328-02.
+Dialogue: 10,0:21:03.14,0:21:07.16,Subtitle,,0,0,0,,Whatcha gonna do, challenge the next floor\Nor call it quits? Spit it out, brother!
+Dialogue: 10,0:21:07.43,0:21:10.14,Subtitle,,0,0,0,,What happens if we choose to leave now?
+Dialogue: 10,0:21:10.14,0:21:14.75,Subtitle,,0,0,0,,Lemme tell you something, your progress gets saved\Nand you can start from here next time.
+Dialogue: 10,0:21:14.75,0:21:19.19,Subtitle,,0,0,0,,Plus, you can re-enter the dungeon\Nas much as you want. Run wild, brother!
+Dialogue: 10,0:21:20.96,0:21:25.92,Subtitle,,0,0,0,,We ended our first day of dungeon crawling\Nafter clearing the first floor.
+Dialogue: 10,0:21:25.92,0:21:28.54,Subtitle,,0,0,0,,Whew, I'm beat!
+Dialogue: 10,0:21:28.54,0:21:31.14,Subtitle,,0,0,0,,That's what 10 hours of fighting will do to you.
+Dialogue: 10,0:21:31.46,0:21:35.77,Subtitle,,0,0,0,,We decided to spend all our days off\Non progressing through the dungeon.
+Dialogue: 10,0:21:35.77,0:21:41.48,Subtitle,,0,0,0,,No matter when or how often we entered,\Nthe dungeon always reloaded exactly the same.
+Dialogue: 10,0:21:41.48,0:21:47.64,Subtitle,,0,0,0,,Which means, I can send my summon creatures\Nto farm monsters even during class.
+Dialogue: 10,0:21:47.64,0:21:51.91,Subtitle,,0,0,0,,Clearing out one floor a day results\Nin about 200 magic stones. Jackpot!
+Dialogue: 10,0:21:51.91,0:21:54.90,Subtitle,,0,0,0,,It's the perfect strategy that only\Na Summoner can pull off!
+Dialogue: 10,0:21:55.81,0:21:58.56,Subtitle,,0,0,0,,{\an8}Then, on our fifth expedition,
+Dialogue: 10,0:21:58.56,0:22:02.34,Subtitle,,0,0,0,,{\an8}we reached the final floor of the C-rank dungeon.
+Dialogue: 10,0:22:02.34,0:22:04.53,Subtitle,,0,0,0,,There are some tough looking\Nmonsters sleeping down here.
+Dialogue: 10,0:22:04.53,0:22:06.34,Subtitle,,0,0,0,,That must be the boss.
+Dialogue: 10,0:22:06.74,0:22:11.27,Subtitle,,0,0,0,,Hey, Allen. I think we all need a grasp\Nof how strong you are right now.
+Dialogue: 10,0:22:11.27,0:22:14.50,Subtitle,,0,0,0,,So, will you use your Summoner powers to fight them?
+Dialogue: 10,0:22:14.50,0:22:16.39,Subtitle,,0,0,0,,Good idea. Is that okay with everybody?
+Dialogue: 10,0:22:16.39,0:22:18.42,Subtitle,,0,0,0,,Yeah! I wanna see you fight!
+Dialogue: 10,0:22:18.42,0:22:20.86,Subtitle,,0,0,0,,You haven't summoned anything\Nbut mice and birds, so far.
+Dialogue: 10,0:22:22.36,0:22:26.05,Subtitle,,0,0,0,,I spent 35,000 D-rank magic stones\Nto make "Crop of Magic" recovery items,
+Dialogue: 10,0:22:26.05,0:22:29.62,Subtitle,,0,0,0,,and used those to push my Enhance skill\Nall the way to level six.
+Dialogue: 10,0:22:30.62,0:22:33.63,Subtitle,,0,0,0,,At level six, Enhance boosts two attributes
+Dialogue: 10,0:22:33.63,0:22:36.20,Subtitle,,0,0,0,,of my summon creatures by a whopping 500!
+Dialogue: 10,0:22:36.20,0:22:37.25,Subtitle,,0,0,0,,Wh-Whoa!
+Dialogue: 10,0:22:37.25,0:22:39.08,Subtitle,,0,0,0,,I dunno what that means, but wowee!
+Dialogue: 10,0:22:40.96,0:22:42.79,Subtitle,,0,0,0,,Bron! Use Protect!
+Dialogue: 10,0:22:45.41,0:22:47.76,Subtitle,,0,0,0,,Teddy! Use Crush!
+Dialogue: 10,0:22:54.21,0:22:55.58,Subtitle,,0,0,0,,Amazing!
+Dialogue: 10,0:22:55.58,0:22:58.10,Subtitle,,0,0,0,,Of course! Allen is super strong!
+Dialogue: 10,0:22:58.50,0:23:00.25,Subtitle,,0,0,0,,That went smoothly.
+Dialogue: 10,0:23:00.25,0:23:00.93,Subtitle,,0,0,0,,Hm?
+Dialogue: 10,0:23:02.48,0:23:04.43,Subtitle,,0,0,0,,Hey, that must be the treasure chest!
+Dialogue: 10,0:23:04.43,0:23:06.30,Subtitle,,0,0,0,,Open it up, Allen!
+Dialogue: 10,0:23:06.30,0:23:07.19,Subtitle,,0,0,0,,Okay.
+Dialogue: 10,0:23:10.01,0:23:11.62,Subtitle,,0,0,0,,It's a steel sword!
+Dialogue: 10,0:23:11.62,0:23:15.08,Subtitle,,0,0,0,,Congrats, guys! We've beat our first dungeon!
+Dialogue: 10,0:23:15.52,0:23:17.46,Subtitle,,0,0,0,,Yahoo!
+Dialogue: 10,0:23:18.71,0:23:22.00,Subtitle,,0,0,0,,Congratulations on clearing the C-rank dungeon.
+Dialogue: 10,0:23:22.00,0:23:24.88,Subtitle,,0,0,0,,Your adventurer cards have been upgraded to D-rank.
+Dialogue: 10,0:23:24.88,0:23:27.63,Subtitle,,0,0,0,,We got two gold coins out of that steel sword.
+Dialogue: 10,0:23:27.63,0:23:29.21,Subtitle,,0,0,0,,We're off to a promising start!
+Dialogue: 10,0:23:29.21,0:23:30.59,Subtitle,,0,0,0,,Let's keep it up!
+Dialogue: 10,0:23:30.59,0:23:32.30,Subtitle,,0,0,0,,No-Life Gamers!
+Dialogue: 10,0:23:32.30,0:23:34.10,Subtitle,,0,0,0,,Go!
+Dialogue: 0,0:01:52.54,0:01:57.50,Caption,,0,0,0,,{\fnTimes New Roman\fs46\c&HFFFFFF&\pos(154,896)}EPISODE 13: OFF TO ACADEMY CITY!
+Dialogue: 0,0:02:12.11,0:02:18.11,Caption,,0,0,0,,{\fnSquare 721 Blk\fs57\c&HFFFFFF&\pos(883,745)}SHOCK
+Dialogue: 0,0:03:24.10,0:03:25.85,Caption,,0,0,0,,{\fnVAGRounded BT\fs46\c&HFFFFFF&\pos(269,194)}How are you doing, everybody? This is Allen.
+Dialogue: 0,0:03:24.10,0:03:25.85,Caption,,0,0,0,,{\fnVAGRounded BT\fs46\c&HFFFFFF&\pos(269,335)}Has Myulla been sleeping soundly at night?
+Dialogue: 0,0:03:24.10,0:03:25.85,Caption,,0,0,0,,{\fnVAGRounded BT\fs46\c&HFFFFFF&\pos(346,486)}Mash, I know playing knights is fun
+Dialogue: 0,0:03:24.10,0:03:25.85,Caption,,0,0,0,,{\fnVAGRounded BT\fs46\c&HFFFFFF&\pos(346,626)}but are you keeping up with your studies?
+Dialogue: 0,0:03:24.10,0:03:25.85,Caption,,0,0,0,,{\fnVAGRounded BT\fs46\c&HFFFFFF&\pos(346,788)}Dad, make sure you go easy on the booze.
+Dialogue: 0,0:03:24.10,0:03:25.85,Caption,,0,0,0,,{\fnVAGRounded BT\fs46\c&HFFFFFF&\pos(346,929)}Mom, take good care of yourself.
+Dialogue: 0,0:06:19.22,0:06:22.19,Caption,,0,0,0,,{\fnTimes New Roman\fs46\c&HFFFFFF&\pos(826,184)}3 DAYS LATER
+Dialogue: 0,0:06:47.01,0:06:50.46,Caption,,0,0,0,,{\fnTimes New Roman\fs46\c&HFFFFFF&\pos(614,886)}KINGDOM OF RATASH, ACADEMY CITY
+Dialogue: 0,0:07:06.93,0:07:11.18,Caption,,0,0,0,,{\fnTimes New Roman\fs46\c&HFFFFFF&\pos(749,896)}THE RATASH ACADEMY
+Dialogue: 0,0:07:38.79,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,86)}NAME:                       DOGORA
+Dialogue: 0,0:07:38.79,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(749,194)}HP:
+Dialogue: 0,0:07:38.79,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,313)}MP:
+Dialogue: 0,0:07:38.79,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(691,400)}ATTACK:
+Dialogue: 0,0:07:38.80,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(672,497)}ENDURANCE:
+Dialogue: 0,0:07:38.80,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(691,594)}AGILITY:
+Dialogue: 0,0:07:38.80,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(653,713)}INTELLIGENCE:
+Dialogue: 0,0:07:38.80,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,832)}LUCK:
+Dialogue: 0,0:07:38.80,0:07:40.72,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,929)}TALENT:                      AXE USER
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(672,86)}NAME:                     CECIL GRANVELLE
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,194)}HP:
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,292)}MP:
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(672,367)}ATTACK:
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(653,475)}ENDURANCE:
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(672,583)}AGILITY:
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(614,702)}INTELLIGENCE:
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(691,799)}LUCK:
+Dialogue: 0,0:08:01.83,0:08:03.54,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(672,918)}TALENT:                          WIZARDESS
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,86)}NAME:                          KRENA
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(749,184)}HP:
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(749,270)}MP:
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,356)}ATTACK:
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(653,475)}ENDURANCE:
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,583)}AGILITY:
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(653,702)}INTELLIGENCE:
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,810)}LUCK:
+Dialogue: 0,0:08:16.93,0:08:18.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,929)}TALENT:                     SWORD LORD
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,86)}NAME:                          ALLEN
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(749,173)}HP:
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(749,270)}MP:
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,367)}ATTACK:
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(672,475)}ENDURANCE:
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,594)}AGILITY:
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(653,691)}INTELLIGENCE:
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,778)}LUCK:
+Dialogue: 0,0:08:44.62,0:08:49.05,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,832)}TALENT:                        SUMMONER
+Dialogue: 0,0:08:49.05,0:08:50.84,Caption,,0,0,0,,{\fnStaccato555 BT\fs68\c&HFFFFFF&\pos(902,86)}FAIL
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,86)}NAME:                           ALLEN
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(749,162)}HP:
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,259)}MP:
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,356)}ATTACK:
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(672,475)}ENDURANCE:
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,583)}AGILITY:
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(653,691)}INTELLIGENCE:
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,756)}LUCK:
+Dialogue: 0,0:09:27.66,0:09:30.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,821)}TALENT:                      SUMMONER
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1421,162)}NAME:       ALLEN
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1421,216)}CLASS:     SUMMONER
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1440,281)}HP:
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1440,346)}MP:
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1421,400)}ATTACK:
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1382,454)}ENDURANCE:
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1402,508)}AGILITY:
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1363,551)}INTELLIGENCE:
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1402,605)}LUCK:
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1190,659)}SKILLS:  SUMMON, CREATE, FUSE, ENHANCE,
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1267,713)}EXPANSION, STORAGE, SHARE, DELETE,
+Dialogue: 0,0:10:05.29,0:10:14.13,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HD5F0FF&\pos(1440,756)}SWORD MASTERY, THROW
+Dialogue: 0,0:10:48.61,0:10:50.08,Caption,,0,0,0,,{\fnStaccato555 BT\fs68\c&H94EBF8&\pos(634,292)}HE
+Dialogue: 0,0:10:48.61,0:10:50.08,Caption,,0,0,0,,{\fnStaccato555 BT\fs68\c&H94EBF8&\pos(1229,292)}RO
+Dialogue: 0,0:11:11.00,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,86)}NAME:                          HELMIOS
+Dialogue: 0,0:11:11.00,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(749,162)}HP:
+Dialogue: 0,0:11:11.00,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(749,259)}MP:
+Dialogue: 0,0:11:11.00,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,356)}ATTACK:
+Dialogue: 0,0:11:11.00,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(672,464)}ENDURANCE:
+Dialogue: 0,0:11:11.00,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(710,583)}AGILITY:
+Dialogue: 0,0:11:11.01,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(653,702)}INTELLIGENCE:
+Dialogue: 0,0:11:11.01,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,756)}LUCK:
+Dialogue: 0,0:11:11.01,0:11:13.23,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(730,821)}TALENT:                           HERO
+Dialogue: 0,0:11:13.23,0:11:14.69,Caption,,0,0,0,,{\fnStaccato222 BT\fs68\c&HFFFFFF&\pos(902,292)}HERO
+Dialogue: 0,0:12:00.07,0:12:04.78,Caption,,0,0,0,,{\fnSwis721 BT\fs34\c&HFFFFFF&\pos(154,130)}A GRADES
+Dialogue: 0,0:12:00.07,0:12:04.78,Caption,,0,0,0,,{\fnSwis721 BT\fs34\c&HFFFFFF&\pos(883,130)}B GRADES
+Dialogue: 0,0:12:00.07,0:12:04.78,Caption,,0,0,0,,{\fnSwis721 BT\fs34\c&HFFFFFF&\pos(1594,130)}C GRADES
+Dialogue: 0,0:13:25.40,0:13:28.49,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(787,119)}ADVENTURE RANK E
+Dialogue: 0,0:13:25.40,0:13:28.49,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(902,788)}ALLEN
+Dialogue: 0,0:13:36.45,0:13:37.87,Caption,,0,0,0,,{\fnStaccato222 BT\fs68\c&HFFFFFF&\pos(864,86)}NO-LIFE GAMERS
+Dialogue: 0,0:13:37.87,0:13:40.59,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(826,464)}NO-LIFE GAMERS
+Dialogue: 0,0:13:43.63,0:13:53.27,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HFFFFFF&\pos(1056,162)}NO-LIFE GAMERS
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(154,151)}TYPE: BEAST
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(154,292)}RANK: E                           TAMA
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(250,432)}HP:
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(250,518)}MP:
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(211,594)}ATTACK:
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(192,670)}ENDURANCE:                    ABILITY:
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(211,734)}AGILITY:                             CLAW
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(173,810)}INTELLIGENCE:          AWAKENED ABILITY:
+Dialogue: 0,0:14:04.98,0:14:08.99,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(230,886)}LUCK:                            BORROWED CAT
+Dialogue: 0,0:15:18.18,0:15:20.14,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HC1EBFD&\pos(634,248)}KRENA HAS JOINED YOUR PARTY.
+Dialogue: 0,0:15:18.18,0:15:20.14,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HC1EBFD&\pos(595,410)}CECIL GRANVELLE HAS JOINED YOUR PARTY.
+Dialogue: 0,0:15:18.18,0:15:20.14,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HC1EBFD&\pos(672,702)}DOGORA HAS JOINED YOUR PARTY.
+Dialogue: 0,0:17:24.06,0:17:28.18,Caption,,0,0,0,,{\fnStaccato555 BT\fs57\c&H405CE1&\pos(806,648)}FIRST DAY OFF
+Dialogue: 0,0:18:36.91,0:18:39.51,Caption,,0,0,0,,{\fnTimes New Roman\fs46\c&HFFFFFF&\pos(845,886)}FIRST FLOOR
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,86)}NAME:     KRENA
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,130)}AGE:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,173)}TALENT:   SWORD LORD
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(211,216)}MITHRIL GREATSWORD
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,216)}LEVEL:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,313)}HP:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,367)}MP:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1248,421)}ATTACK:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1229,475)}ENDURANCE:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1248,540)}AGILITY:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1210,594)}INTELLIGENCE:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,648)}LUCK:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,691)}SKILLS:
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1421,734)}SWORD LORD (1)
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1421,778)}SLASH (1) EXP 0/10
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1421,821)}SWORD MASTERY (5)
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,864)}EXTRA:      LIMIT BREAK
+Dialogue: 0,0:19:07.75,0:19:09.70,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,940)}EXP:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(288,86)}NAME:     DOGORA
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(288,140)}AGE:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(269,194)}TALENT:    AXE USER
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(269,248)}LEVEL:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(288,313)}HP:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(288,367)}MP:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(269,421)}ATTACK:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(250,475)}ENDURANCE:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(269,529)}AGILITY:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(230,583)}INTELLIGENCE:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(269,626)}LUCK:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(269,680)}SKILLS:
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(403,724)}WAR AXE (1)
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(384,767)}FULL MIGHT (1)   EXP 0/10
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(384,821)}AXE MASTERY (4)
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1459,821)}MITHRIL AXE
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(269,864)}EXTRA:      HEART & SOUL
+Dialogue: 0,0:19:09.70,0:19:11.66,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(288,918)}EXP:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,86)}NAME:           CECIL GRANVELLE
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,130)}AGE:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,173)}TALENT:     WIZARDESS
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(211,216)}ANCIENT WOOD WAND
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,216)}LEVEL:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,292)}HP:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,346)}MP:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,400)}ATTACK:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1229,443)}ENDURANCE:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,508)}AGILITY:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1229,562)}INTELLIGENCE:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,616)}LUCK:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1267,670)}SKILLS:
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1402,713)}WIZARDRY (1)
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1421,756)}FIRE MAGIC (1) EXP 10/10
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1421,799)}SPARRING (2)
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1248,853)}EXTRA:     PETIT METEOR
+Dialogue: 0,0:19:11.66,0:19:13.62,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1286,918)}EXP:
+Dialogue: 0,0:19:29.38,0:19:32.02,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HC1EBFD&\pos(749,616)}YOU HAVE DEFEATED 1 SLIME
+Dialogue: 0,0:19:29.38,0:19:32.02,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HC1EBFD&\pos(768,713)}YOU HAVE GAINED 8 EXP
+Dialogue: 0,0:20:15.89,0:20:17.11,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HC1EBFD&\pos(230,86)}YOU HAVE DEFEATED 1 BIG TOAD
+Dialogue: 0,0:20:15.89,0:20:17.11,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HC1EBFD&\pos(250,173)}YOU HAVE GAINED 120 EXP
+Dialogue: 0,0:20:20.59,0:20:22.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(864,508)}KRENA
+Dialogue: 0,0:20:20.76,0:20:22.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(538,216)}DOGORA
+Dialogue: 0,0:20:20.97,0:20:22.47,Caption,,0,0,0,,{\fnStaccato222 BT\fs34\c&HC1EBFD&\pos(1152,324)}CECIL
+Dialogue: 0,0:21:55.41,0:21:58.86,Caption,,0,0,0,,{\fnTimes New Roman\fs46\c&HFFFFFF&\pos(710,886)}C-rank Dungeon: Final Floor
+Dialogue: 0,0:22:34.74,0:22:35.16,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(326,821)}CREATE
+Dialogue: 0,0:22:35.16,0:22:35.53,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(346,821)}FUSE
+Dialogue: 0,0:22:35.53,0:22:35.78,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(307,821)}ENHANCE
+Dialogue: 0,0:22:35.78,0:22:35.95,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(326,821)}CREATE
+Dialogue: 0,0:22:35.95,0:22:36.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(346,821)}FUSE
+Dialogue: 0,0:22:36.12,0:22:36.12,Caption,,0,0,0,,{\fnStaccato222 BT\fs46\c&HFFFFFF&\pos(326,821)}ENHANCE

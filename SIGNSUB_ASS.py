@@ -4,6 +4,11 @@ This complements ``SIGNSUB.py`` (which works on .mkv files). It skips FFmpeg
 entirely and filters a full ``.ass`` file down to its sign/typesetting/SFX
 events, writing the result next to the input as ``{name}_signs.ass``.
 
+The dialogue styles to drop are auto-detected per file: fansub releases that
+use ``Default``/``Song`` (e.g. ``Fullsub.ass``) drop those, while SubsPlus+
+releases that use ``Subtitle``/``Subtitle-Alt`` (e.g. ``NEW FULL SUB.ass``)
+drop those instead and keep the positioned ``Caption`` signs.
+
 Usage:
     python SIGNSUB_ASS.py            # prompts for the .ass path
     python SIGNSUB_ASS.py full.ass   # direct path argument
@@ -12,7 +17,7 @@ Usage:
 import sys
 from pathlib import Path
 
-from signsub.processing.pipeline import filter_ass_file
+from signsub.processing.pipeline import filter_ass_file_auto
 
 
 def extract_signs_from_ass(ass_path):
@@ -21,7 +26,8 @@ def extract_signs_from_ass(ass_path):
     output_ass = input_ass.with_name(f"{input_ass.stem}_signs.ass")
 
     print("Filtering out dialogue tracks to leave only signs/SFX...")
-    kept, dropped = filter_ass_file(input_ass, output_ass)
+    kept, dropped, banned = filter_ass_file_auto(input_ass, output_ass)
+    print(f"Detected dialogue style(s): {', '.join(sorted(banned))}")
     print(f"Kept {kept} sign/SFX event(s), dropped {dropped} dialogue event(s).")
 
     if kept == 0:
