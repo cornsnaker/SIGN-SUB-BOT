@@ -89,11 +89,10 @@ class SubtitlePipeline:
         if source is None:
             raise PipelineError("No ASS/SSA subtitle track found in the file.")
 
-        base = mkv_path.with_suffix("")
-        temp_ass = Path(f"{base}_temp_full.ass")
-        signs_ass = Path(f"{base}_signs.ass")
-        output = Path(f"{base.name}_clean_english.mkv")
-        output = mkv_path.with_name(output.name)
+        stem = mkv_path.stem
+        temp_ass = mkv_path.with_name(f"{stem}_temp_full.ass")
+        signs_ass = mkv_path.with_name(f"{stem}_signs.ass")
+        output = mkv_path.with_name(f"{stem}_clean_english.mkv")
         temp_files.extend([temp_ass, signs_ass])
 
         # -- Stage 2: extract the chosen ASS track ------------------------
@@ -123,7 +122,11 @@ class SubtitlePipeline:
 
         # -- Stage 4: remux -----------------------------------------------
         english_subs = [s for s in info.subtitles() if s.is_english]
-        new_track_sub_index = len(english_subs)
+        # The signs track is appended after the English subs ffmpeg actually
+        # writes, so index the metadata/disposition at that real count. Probe
+        # with the same ``s:m:language:eng`` selector the muxer uses so the
+        # index can never point past the last written subtitle stream.
+        new_track_sub_index = await self._english_sub_count(mkv_path)
         duration = await self._duration(mkv_path)
 
         remux_cmd = [
@@ -191,6 +194,26 @@ class SubtitlePipeline:
             raise PipelineError(f"FFmpeg {stage.lower()} failed (rc={rc}): {last_tail[-300:]}")
         if progress_cb and duration > 0:
             await progress_cb(stage, duration, duration)
+
+    async def _english_sub_count(self, path: Path) -> int:
+        """Count subtitle streams matching ``s:m:language:eng`` (the mux selector)."""
+
+        cmd = [
+            self._cfg.ffprobe_bin,
+            "-v",
+            "error",
+            "-select_streams",
+            "s:m:language:eng",
+            "-show_entries",
+            "stream=index",
+            "-of",
+            "csv=p=0",
+            str(path),
+        ]
+        result = await proc.run(cmd, timeout=60)
+        if not result.ok:
+            return 0
+        return sum(1 for line in result.stdout.splitlines() if line.strip())
 
     async def _duration(self, path: Path) -> float:
         cmd = [

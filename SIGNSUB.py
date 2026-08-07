@@ -85,15 +85,31 @@ def extract_and_filter_signs(mkv_path, stream_index):
         
     return output_ass
 
+def count_english_subs(mkv_path):
+    """Counts how many subtitle streams match the muxer's 'language:eng' selector."""
+    code, stdout, stderr = run_command([
+        "ffprobe", "-v", "error",
+        "-select_streams", "s:m:language:eng",
+        "-show_entries", "stream=index",
+        "-of", "csv=p=0",
+        mkv_path
+    ])
+    if code != 0:
+        return 0
+    return sum(1 for line in stdout.splitlines() if line.strip())
+
 def mux_subtitle_back(mkv_path, ass_path):
     """Muxes only video, audio, English subs, fonts, and the new sign sub track into a new MKV."""
     base_dir = os.path.dirname(os.path.abspath(mkv_path))
     file_name = os.path.splitext(os.path.basename(mkv_path))[0]
-    
+
     final_mkv = os.path.join(base_dir, f"{file_name}_clean_english.mkv")
-    
+
+    # The sign track is appended right after the English subs ffmpeg writes.
+    new_track_sub_index = count_english_subs(mkv_path)
+
     print("\nMuxing clean English streams back into a new MKV video file...")
-    
+
     mux_cmd = [
         "ffmpeg", "-y",
         "-i", mkv_path,                 # Input 0: Original Video
@@ -104,8 +120,8 @@ def mux_subtitle_back(mkv_path, ass_path):
         "-map", "1:s:0",                # Include our new sign subtitle track
         "-map", "0:t?",                 # Include attachments/fonts if they exist (? makes it optional)
         "-c", "copy",                   # Direct stream copy (no encoding)
-        "-metadata:s:s:2", "language=eng", # The new track will be the 3rd subtitle stream (index 2)
-        "-metadata:s:s:2", "title=Signs & Songs",
+        f"-metadata:s:s:{new_track_sub_index}", "language=eng", # Tag the new sign track (appended after the English subs)
+        f"-metadata:s:s:{new_track_sub_index}", "title=Signs & Songs",
         final_mkv
     ]
     
