@@ -16,6 +16,7 @@ clean `{name}_clean_english.mkv` back to you.
 - **Write-locks** — processing never touches a file that is still downloading.
 - **FFmpeg subtitle automation** — `ffprobe` JSON stream mapping → extract the primary English ASS layer → strip `default`/`song` styled dialogue line-by-line → remux `0:v` + `0:a` + English subs + the new Signs & Songs track + fonts/attachments, tagging it `language=eng` / `title=Signs & Songs`.
 - **Chunked uploads** via Pyrogram with throttled progress.
+- **`/logs` command + error log delivery** — rotating on-disk log file plus an in-memory ring buffer; `/logs` sends `logs.txt`, and when a task fails the bot automatically sends that task's captured logs as a document.
 - **Guaranteed cleanup** — every task purges its download buffers and loose `.ass` assets in a `finally` block.
 
 ## Architecture

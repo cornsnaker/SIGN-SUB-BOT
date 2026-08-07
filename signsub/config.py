@@ -61,6 +61,9 @@ class Config:
     work_dir: Path
     download_dir: Path
 
+    log_file: Path
+    log_max_bytes: int
+
     aria2_host: str
     aria2_port: int
     aria2_secret: str
@@ -100,6 +103,8 @@ class Config:
             bot_token=os.getenv("BOT_TOKEN", ""),
             work_dir=work_dir,
             download_dir=download_dir,
+            log_file=Path(os.getenv("LOG_FILE", str(work_dir / "signsub.log"))).expanduser(),
+            log_max_bytes=_get_int("LOG_MAX_BYTES", 1_000_000),
             aria2_host=aria2_host,
             aria2_port=aria2_port,
             aria2_secret=os.getenv("ARIA2_SECRET", ""),

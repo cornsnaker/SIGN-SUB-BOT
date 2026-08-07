@@ -9,12 +9,14 @@ Responsibilities:
 
 from __future__ import annotations
 
+import io
+
 from pyrogram import Client, filters
 from pyrogram.enums import ParseMode
 from pyrogram.types import CallbackQuery, Message
 
 from ..config import Config
-from ..core import sources
+from ..core import logbuffer, sources
 from ..core.manager import TaskManager
 from ..core.status import StatusReporter
 from ..ui import keyboards as kb
@@ -27,6 +29,7 @@ _START_CARD = pg.render_status(
         "Send me a direct link, magnet, .torrent file or a Nyaa.si link.",
         "Or type any text to search Nyaa.si.",
         "I will leech it, build a clean Signs & Songs track and send it back.",
+        "Use /logs to fetch the recent bot logs.",
     ],
     emoji="🎬",
 )
@@ -45,6 +48,24 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
                                      parse_mode=ParseMode.HTML)
             return
         await message.reply_text(_START_CARD, parse_mode=ParseMode.HTML)
+
+    @client.on_message(filters.command("logs") & filters.private)
+    async def _on_logs(_: Client, message: Message) -> None:
+        if not _authorized(message.from_user.id if message.from_user else None):
+            await message.reply_text(pg.render_error("You are not authorized to use this bot."),
+                                     parse_mode=ParseMode.HTML)
+            return
+        data = io.BytesIO(logbuffer.buffer.render(limit=100).encode("utf-8"))
+        data.name = "logs.txt"
+        await message.reply_document(
+            data,
+            caption=pg.render_status(
+                "Recent Logs",
+                ["The newest entries are at the bottom."],
+                emoji="📄",
+            ),
+            parse_mode=ParseMode.HTML,
+        )
 
     @client.on_message(filters.document & filters.private)
     async def _on_document(_: Client, message: Message) -> None:
@@ -75,7 +96,7 @@ def register(client: Client, manager: TaskManager, config: Config) -> None:
             reply_markup=kb.source_menu(task.token),
         )
 
-    @client.on_message(filters.text & filters.private & ~filters.command(["start", "help"]))
+    @client.on_message(filters.text & filters.private & ~filters.command(["start", "help", "logs"]))
     async def _on_text(_: Client, message: Message) -> None:
         if not _authorized(message.from_user.id if message.from_user else None):
             return

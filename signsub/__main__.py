@@ -9,27 +9,52 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+from logging.handlers import RotatingFileHandler
 
 from pyrogram import Client
 
 from .config import Config
+from .core import logbuffer
 from .core.manager import TaskManager
 from .handlers import router
 
 log = logging.getLogger("signsub")
 
+_LOG_FORMAT = "%(asctime)s | %(levelname)-7s | %(name)s | %(message)s"
 
-def _configure_logging() -> None:
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
-    )
+
+def _configure_logging(config: Config) -> None:
+    """Console + rotating file + in-memory ring buffer (for ``/logs``)."""
+
+    root = logging.getLogger()
+    root.setLevel(logging.INFO)
+
+    console = logging.StreamHandler()
+    console.setFormatter(logging.Formatter(_LOG_FORMAT))
+    root.addHandler(console)
+
+    try:
+        config.log_file.parent.mkdir(parents=True, exist_ok=True)
+        file_handler = RotatingFileHandler(
+            config.log_file,
+            maxBytes=max(config.log_max_bytes, 10_000),
+            backupCount=2,
+            encoding="utf-8",
+        )
+        file_handler.setFormatter(logging.Formatter(_LOG_FORMAT))
+        root.addHandler(file_handler)
+    except OSError as exc:
+        print(f"WARNING: cannot open log file {config.log_file}: {exc}", file=sys.stderr)
+
+    logbuffer.buffer.setFormatter(logging.Formatter(_LOG_FORMAT))
+    root.addHandler(logbuffer.buffer)
+
     logging.getLogger("pyrogram").setLevel(logging.WARNING)
 
 
 async def _amain() -> int:
-    _configure_logging()
     config = Config.from_env()
+    _configure_logging(config)
     problems = config.validate()
     if problems:
         for problem in problems:

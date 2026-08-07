@@ -9,6 +9,7 @@ purged whether the task succeeds, fails or is cancelled.
 from __future__ import annotations
 
 import asyncio
+import logging
 import shutil
 import time
 from pathlib import Path
@@ -17,6 +18,7 @@ from typing import Optional
 from pyrogram import Client
 
 from ..config import Config
+from . import logbuffer
 from ..leech.aria2_client import Aria2Client
 from ..leech.daemon import Aria2Daemon
 from ..leech.engine import LeechEngine, LeechError
@@ -28,6 +30,8 @@ from ..upload.uploader import Uploader
 from .sources import SourceKind, SourceSpec
 from .status import StatusReporter
 from .task import Task, TaskState, new_token
+
+log = logging.getLogger("signsub.manager")
 
 _VIDEO_EXTS = {".mkv", ".mp4", ".m4v", ".mov", ".webm", ".ts"}
 # Evict tasks the user created but never started after this long, and never
@@ -157,9 +161,14 @@ class TaskManager:
     # -- execution ----------------------------------------------------------
 
     async def _execute(self, task: Task) -> None:
+        with logbuffer.task_log_context(task.token):
+            await self._execute_inner(task)
+
+    async def _execute_inner(self, task: Task) -> None:
         reporter = task.reporter
         work_subdir = self._cfg.download_dir / task.token
         task.work_subdir = work_subdir
+        log.info("Task %s started: %s", task.token, task.spec.label)
         try:
             task.state = TaskState.QUEUED
             if reporter:
@@ -187,18 +196,25 @@ class TaskManager:
                 )
         except asyncio.CancelledError:
             task.state = TaskState.CANCELLED
+            log.info("Task %s cancelled.", task.token)
             if reporter:
                 await reporter.finalize(
                     pg.render_status("Task Cancelled", ["All assets were cleaned up."], emoji="🛑")
                 )
         except (LeechError, PipelineError) as exc:
             task.state = TaskState.FAILED
+            log.error("Task %s failed: %s", task.token, exc)
             if reporter:
-                await reporter.finalize(pg.render_error(str(exc)))
+                await reporter.finalize(
+                    pg.render_error(str(exc), "Logs attached below.")
+                )
+                await self._send_task_logs(task)
         except Exception as exc:  # noqa: BLE001 - surface any unexpected failure
             task.state = TaskState.FAILED
+            log.exception("Task %s crashed unexpectedly.", task.token)
             if reporter:
                 await reporter.finalize(pg.render_error("Unexpected failure", repr(exc)))
+                await self._send_task_logs(task)
         finally:
             await self._cleanup(task)
             self._tasks.pop(task.token, None)
@@ -224,10 +240,12 @@ class TaskManager:
 
         gid = await self._engine.start(task.spec, download_dir=work_subdir)
         task.gid = gid
+        log.info("Task %s download started (gid=%s).", task.token, gid)
         files = await self._engine.wait(gid, progress_cb=progress, cancel_event=task.cancel_event)
         task.downloaded_files = files
         if not files:
             raise LeechError("Download finished but produced no files.")
+        log.info("Task %s downloaded %d file(s).", task.token, len(files))
 
     async def _do_process(self, task: Task) -> Path:
         task.state = TaskState.PROCESSING
@@ -252,8 +270,10 @@ class TaskManager:
                 force=True,
             )
 
+        log.info("Task %s processing %s", task.token, target.name)
         result = await self._pipeline.process(target, progress_cb=progress)
         task.produced_files.append(result.output_path)
+        log.info("Task %s pipeline produced %s", task.token, result.output_path.name)
         if reporter:
             await reporter.update(
                 pg.render_status(
@@ -296,6 +316,27 @@ class TaskManager:
             progress_cb=progress,
             reply_to=task.trigger_message_id,
         )
+
+    async def _send_task_logs(self, task: Task) -> None:
+        """Send the task's captured log lines as a document after a failure."""
+
+        lines = logbuffer.buffer.for_task(task.token) or logbuffer.buffer.tail(20)
+        if not lines:
+            return
+        work_subdir = task.work_subdir or self._cfg.download_dir / task.token
+        try:
+            work_subdir.mkdir(parents=True, exist_ok=True)
+            log_path = work_subdir / f"logs_{task.token}.txt"
+            log_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            caption = pg.render_status("Task Logs", [task.spec.label], emoji="📄")
+            await self._uploader.send_document(
+                task.chat_id,
+                log_path,
+                caption=caption,
+                reply_to=task.trigger_message_id,
+            )
+        except Exception:  # noqa: BLE001 - log delivery must never crash cleanup
+            log.warning("Could not deliver logs for task %s.", task.token)
 
     async def _cleanup(self, task: Task) -> None:
         """Purge all on-disk assets for this task (always runs)."""
