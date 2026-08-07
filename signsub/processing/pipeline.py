@@ -232,6 +232,54 @@ def _filter_ass(temp_ass: Path, output_ass: Path) -> tuple[int, int]:
     return kept, dropped
 
 
+def filter_sign_styles(lines: list[str]) -> tuple[list[str], int, int]:
+    """Keep only sign/SFX ``Dialogue`` lines from a list of ASS lines.
+
+    Returns ``(output_lines, events_kept, events_dropped)``. Lines outside the
+    ``[Events]`` section and non-Dialogue lines are preserved as-is.
+    """
+
+    out: list[str] = []
+    in_events = False
+    kept = 0
+    dropped = 0
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_events = stripped.lower() == "[events]"
+            out.append(line)
+            continue
+        if in_events and stripped.startswith("Dialogue:"):
+            parts = line.split(",", 9)
+            if len(parts) > 3:
+                style = parts[3].strip().lower()
+                if style in BANNED_STYLES:
+                    dropped += 1
+                    continue
+                kept += 1
+            out.append(line)
+        else:
+            out.append(line)
+
+    return out, kept, dropped
+
+
+def filter_ass_file(input_ass: Path, output_ass: Path) -> tuple[int, int]:
+    """Extract sign subs from a full ``.ass`` file -> ``output_ass``.
+
+    Returns ``(events_kept, events_dropped)`` for the ``Dialogue`` lines.
+    """
+
+    try:
+        lines = input_ass.read_text(encoding="utf-8").splitlines(keepends=True)
+    except UnicodeDecodeError:
+        lines = input_ass.read_text(encoding="utf-8-sig").splitlines(keepends=True)
+
+    out, kept, dropped = filter_sign_styles(lines)
+    output_ass.write_text("".join(out), encoding="utf-8")
+    return kept, dropped
+
+
 def _safe_unlink(path: Path) -> None:
     try:
         path.unlink(missing_ok=True)

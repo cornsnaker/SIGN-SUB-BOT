@@ -105,3 +105,14 @@ local `.mkv` without Telegram:
 ```bash
 python SIGNSUB.py
 ```
+
+If you already have a **full `.ass` subtitle file** and only want the sign
+subs extracted from it (no MKV / FFmpeg needed), use `SIGNSUB_ASS.py`:
+
+```bash
+python SIGNSUB_ASS.py            # prompts for the .ass path
+python SIGNSUB_ASS.py Fullsub.ass
+```
+
+It writes `{name}_signs.ass` next to the input, keeping every style except
+`default`/`song` (e.g. the sign styles in `Fullsub.ass`).
