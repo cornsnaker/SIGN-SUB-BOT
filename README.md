@@ -121,3 +121,7 @@ are auto-detected per file:
   sign styles (`VAG Rounded BT`, `First Grader`, ...).
 - SubsPlus+ releases like `NEW FULL SUB.ass` — drops
   `Subtitle`/`Subtitle-Alt`, keeps the positioned `Caption` signs.
+
+Embedded attachments (`[Fonts]` / `[Graphics]` sections) are all decoded and
+copied into a `{name}_attachments` folder next to the output, so the signs
+file stays usable with its original fonts.

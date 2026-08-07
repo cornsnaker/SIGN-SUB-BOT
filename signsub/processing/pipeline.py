@@ -334,12 +334,71 @@ def detect_dialogue_styles(lines: list[str]) -> set[str]:
     return set(BANNED_STYLES)
 
 
-def filter_ass_file_auto(input_ass: Path, output_ass: Path) -> tuple[int, int, set[str]]:
+def extract_ass_attachments(lines: list[str], output_dir: Path) -> list[Path]:
+    """Decode every attachment embedded in a full ``.ass`` file to disk.
+
+    Reads the ``[Fonts]`` and ``[Graphics]`` sections (UU-encoded blocks
+    introduced by ``fontname:`` / ``graphicsname:`` lines) and writes each
+    attachment as a real file inside ``output_dir``, which is created if
+    needed. Returns the list of written file paths.
+    """
+
+    import binascii
+
+    attachments: list[tuple[str, list[str]]] = []
+    name: str | None = None
+    chunks: list[str] = []
+    in_attachment_section = False
+
+    def _flush() -> None:
+        nonlocal name, chunks
+        if name and chunks:
+            attachments.append((name, chunks))
+        name, chunks = None, []
+
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            _flush()
+            in_attachment_section = stripped.lower() in ("[fonts]", "[graphics]")
+            continue
+        if not in_attachment_section:
+            continue
+        lowered = stripped.lower()
+        if lowered.startswith(("fontname:", "graphicsname:")):
+            _flush()
+            name = stripped.split(":", 1)[1].strip()
+        elif name and stripped:
+            chunks.append(stripped)
+    _flush()
+
+    written: list[Path] = []
+    if attachments:
+        output_dir.mkdir(parents=True, exist_ok=True)
+    for attachment_name, encoded in attachments:
+        try:
+            data = b"".join(
+                binascii.a2b_uu(chunk.encode("ascii", "ignore")) for chunk in encoded
+            )
+        except (binascii.Error, ValueError):
+            continue
+        target = output_dir / Path(attachment_name).name
+        target.write_bytes(data)
+        written.append(target)
+    return written
+
+
+def filter_ass_file_auto(
+    input_ass: Path, output_ass: Path, with_attachments: bool = False
+) -> tuple[int, int, set[str], list[Path]]:
     """Extract sign subs from a full ``.ass`` file, auto-detecting its styles.
 
-    Returns ``(events_kept, events_dropped, banned_styles)`` where
+    When ``with_attachments`` is true, every embedded font/graphic attachment
+    is also decoded into a ``{name}_attachments`` folder next to the output.
+
+    Returns ``(events_kept, events_dropped, banned_styles, attachments)`` where
     ``banned_styles`` is the detected set of dialogue style names that was
-    filtered out.
+    filtered out and ``attachments`` lists the copied attachment files.
     """
 
     try:
@@ -371,7 +430,13 @@ def filter_ass_file_auto(input_ass: Path, output_ass: Path) -> tuple[int, int, s
             out.append(line)
 
     output_ass.write_text("".join(out), encoding="utf-8")
-    return kept, dropped, banned
+
+    attachments: list[Path] = []
+    if with_attachments:
+        attachments = extract_ass_attachments(
+            lines, output_ass.with_name(f"{output_ass.stem}_attachments")
+        )
+    return kept, dropped, banned, attachments
 
 
 def _safe_unlink(path: Path) -> None:

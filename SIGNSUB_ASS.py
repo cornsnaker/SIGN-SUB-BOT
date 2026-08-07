@@ -9,6 +9,10 @@ use ``Default``/``Song`` (e.g. ``Fullsub.ass``) drop those, while SubsPlus+
 releases that use ``Subtitle``/``Subtitle-Alt`` (e.g. ``NEW FULL SUB.ass``)
 drop those instead and keep the positioned ``Caption`` signs.
 
+If the input carries embedded attachments (``[Fonts]`` / ``[Graphics]``
+sections, as produced when extracting subtitles from an MKV), they are all
+decoded and copied into a ``{name}_attachments`` folder next to the output.
+
 Usage:
     python SIGNSUB_ASS.py            # prompts for the .ass path
     python SIGNSUB_ASS.py full.ass   # direct path argument
@@ -26,9 +30,15 @@ def extract_signs_from_ass(ass_path):
     output_ass = input_ass.with_name(f"{input_ass.stem}_signs.ass")
 
     print("Filtering out dialogue tracks to leave only signs/SFX...")
-    kept, dropped, banned = filter_ass_file_auto(input_ass, output_ass)
+    kept, dropped, banned, attachments = filter_ass_file_auto(
+        input_ass, output_ass, with_attachments=True
+    )
     print(f"Detected dialogue style(s): {', '.join(sorted(banned))}")
     print(f"Kept {kept} sign/SFX event(s), dropped {dropped} dialogue event(s).")
+    if attachments:
+        print(f"Copied {len(attachments)} attachment(s):")
+        for attachment in attachments:
+            print(f"  📎 {attachment}")
 
     if kept == 0:
         print("No sign/typesetting events remained after filtering out dialogue.")
